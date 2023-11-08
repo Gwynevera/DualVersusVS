@@ -4,6 +4,27 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
+    public class MyPlayerKeys
+    {
+        public PlayerKeys.PlayerKeysType playerKeys;
+
+        public KeyCode leftKey;
+        public KeyCode rightKey;
+        public KeyCode downKey;
+        public KeyCode upKey;
+
+        public KeyCode jumpKey;
+        public KeyCode dashkey;
+        public KeyCode attackKey;
+
+        public MyPlayerKeys()
+        {
+            playerKeys = PlayerKeys.PlayerKeysType.Player1_Keyboard;
+        }
+    }
+    public MyPlayerKeys myKeys;
+    PlayerKeys pKeyScript;
+
     bool keyLeft, keyRight, keyDown, keyUp;
     bool keyJump, keyDash, keyShoot;
 
@@ -17,12 +38,12 @@ public class PlayerMovement : MonoBehaviour
     int dir = -1;
 
     float speed = 0;
-    float maxSpeed = 9;
-    float acceleration = 0.70f;
+    float maxSpeed = 12;
+    float acceleration = 0.50f;
     float deceleration = 0.95f;
     float airDeceleration = 0.95f;
 
-    float gravity = 1.25f;
+    float gravity = 1;
     bool grounded = false;
     bool wall = false;
     bool roof = false;
@@ -31,26 +52,33 @@ public class PlayerMovement : MonoBehaviour
 
     bool jumpUp;
     float jumpEnd;
-    float jumpHeight = 1.25f;
-    float jumpSpeed = 16.5f;
+    float jumpHeight = 2;
+    float jumpSpeed = 18;
 
     bool airDash, groundDash;
     bool canAirDash;
-    float dashSpeed = 12;
-    float dashTime = 0.35f;
+    float dashSpeed = 20;
+    float dashTime = 0.2f;
     float dashTimer;
     bool keepDashSpeed;
 
     float spawnAfterimageTime = 0.035f;
     float spawnAfterimageTimer;
+    bool keepSpawn = false;
+    float keepSpawnTime = 0.25f;
+    float keepSpawnTimer = 0;
 
     bool coyote = false;
-    float coyoteTime = 0.55f;
+    float coyoteTime = 0.2f;
     float coyoteTimer;
 
     bool jumpBuffer = false;
-    float jBufferTime = 0.35f;
+    float jBufferTime = 0.15f;
     float jBufferTimer = 0;
+
+    bool keepDashBuffer = false;
+    float kdBufferTime = 0.25f;
+    float kdBufferTimer = 0;
 
     // Start is called before the first frame update
     void Start()
@@ -59,6 +87,10 @@ public class PlayerMovement : MonoBehaviour
         box = GetComponent<BoxCollider2D>();
         anim = GetComponent<Animator>();
         sprite = GetComponent<SpriteRenderer>();
+
+        pKeyScript = new PlayerKeys();
+        myKeys = new MyPlayerKeys();
+        pKeyScript.SetPlayerKeys(ref myKeys);
     }
 
     // Update is called once per frame
@@ -89,14 +121,46 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        #region Inputs
-        keyUp = Input.GetKey(KeyCode.W);
-        keyLeft = Input.GetKey(KeyCode.A);
-        keyDown = Input.GetKey(KeyCode.S);
-        keyRight = Input.GetKey(KeyCode.D);
-        keyJump = Input.GetKey(KeyCode.K);
-        keyDash = Input.GetKey(KeyCode.LeftShift);
+        if (keepDashBuffer)
+        {
+            kdBufferTimer += Time.fixedDeltaTime;
+            if (kdBufferTimer > kdBufferTime)
+            {
+                keepDashBuffer = false;
+            }
+        }
 
+        #region Inputs
+        if (myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player1_Keyboard || 
+            myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player2_Keyboard)
+        {
+            keyRight = Input.GetKey(myKeys.rightKey);
+            keyLeft = Input.GetKey(myKeys.leftKey);
+            keyUp = Input.GetKey(myKeys.upKey);
+            keyDown = Input.GetKey(myKeys.downKey);
+        }
+        else
+        {
+            if (myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player1_Gamepad)
+            {
+                keyRight = Input.GetAxis(pKeyScript.g1PadX) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g1StickX) >= pKeyScript.minStickValue;
+                keyLeft =  Input.GetAxis(pKeyScript.g1PadX) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g1StickX) <= -pKeyScript.minStickValue;
+                keyUp =    Input.GetAxis(pKeyScript.g1PadY) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g1StickY) >= pKeyScript.minStickValue;
+                keyDown =  Input.GetAxis(pKeyScript.g1PadY) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g1StickY) <= -pKeyScript.minStickValue;
+            }
+            else if (myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player2_Gamepad)
+            {
+                keyRight = Input.GetAxis(pKeyScript.g2PadX) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g2StickX) >= pKeyScript.minStickValue;
+                keyLeft =  Input.GetAxis(pKeyScript.g2PadX) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g2StickX) <= -pKeyScript.minStickValue;
+                keyUp =    Input.GetAxis(pKeyScript.g2PadY) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g2StickY) >= pKeyScript.minStickValue;
+                keyDown =  Input.GetAxis(pKeyScript.g2PadY) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g2StickY) <= -pKeyScript.minStickValue;
+            }
+        }
+        keyJump = Input.GetKey(myKeys.jumpKey);
+        keyDash = Input.GetKey(myKeys.dashkey);
+        #endregion
+
+        #region Jump Key
         if (keyJump)
         {
             if ((grounded || coyote) && releasedJump)
@@ -111,7 +175,7 @@ public class PlayerMovement : MonoBehaviour
                 jumpEnd = transform.position.y + jumpHeight;
                 anim.SetBool("Jump", true);
 
-                if (groundDash)
+                if (groundDash || keepDashBuffer)
                 {
                     groundDash = false;
                     anim.SetBool("Dash", false);
@@ -141,7 +205,9 @@ public class PlayerMovement : MonoBehaviour
             }
             jumpUp = false;
         }
+        #endregion
 
+        #region Dash Key
         if (keyDash)
         {
             if (releasedDash)
@@ -168,6 +234,15 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
+            if (groundDash)
+            {
+                keepDashBuffer = true;
+                kdBufferTimer = 0;
+
+                keepSpawn = true;
+                keepSpawnTimer = 0;
+            }
+
             releasedDash = true;
             groundDash = airDash = false;
             anim.SetBool("Dash", false);
@@ -268,15 +343,35 @@ public class PlayerMovement : MonoBehaviour
             dashTimer += Time.fixedDeltaTime;
             if (dashTimer >= dashTime)
             {
+                if (groundDash)
+                {
+                    keepDashBuffer = true;
+                    kdBufferTimer = 0;
+                }
+
                 groundDash = airDash = false;
                 anim.SetBool("Dash", false);
+
+                keepSpawn = true;
+                keepSpawnTimer = 0;
             }
         }
+        
         if (keepDashSpeed && (keyLeft || keyRight))
         {
             speed = dashSpeed;
         }
-        if (groundDash || airDash || keepDashSpeed)
+
+        if (keepSpawn)
+        {
+            keepSpawnTimer += Time.fixedDeltaTime;
+            if (keepSpawnTimer > keepSpawnTime)
+            {
+                keepSpawn = false;
+            }
+        }
+
+        if (groundDash || airDash || keepDashSpeed || keepSpawn)
         {
 
             spawnAfterimageTimer += Time.fixedDeltaTime;
@@ -293,6 +388,9 @@ public class PlayerMovement : MonoBehaviour
                 afterImage.GetComponent<SpriteRenderer>().sortingOrder = -1;
                 afterImage.AddComponent<DestroyAfter>();
                 afterImage.GetComponent<DestroyAfter>().timeToDie = 0.5f;
+                afterImage.AddComponent<FadeOut>();
+                afterImage.GetComponent<FadeOut>().timeToFade = 0.5f;
+                afterImage.GetComponent<FadeOut>().CalculateFadeRate();
             }
         }
         #endregion
@@ -310,7 +408,7 @@ public class PlayerMovement : MonoBehaviour
         bool prevGround = grounded;
 
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, new Vector2(box.size.x, box.size.y/2), 0, Vector2.down, 1, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.down, box.size.y/2, groundCollisionLayer);
 
         bool yeah = (r.collider != null && r.collider.tag == "Ground" && r.normal.y > 0);
         
@@ -328,7 +426,7 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            if (prevGround)
+            if (prevGround && !jumpUp)
             {
                 coyote = true;
                 coyoteTimer = 0;
@@ -340,14 +438,14 @@ public class PlayerMovement : MonoBehaviour
     private bool WallCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.right*dir, 1, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.right*dir, box.size.x/2, groundCollisionLayer);
         return (r.collider != null && r.normal.x != dir && r.normal.x != 0);
     }
 
     private bool RoofCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, new Vector2(box.size.x, box.size.y / 2), 0, Vector2.up, 1, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.up, box.size.y/2, groundCollisionLayer);
 
         return r.collider != null;
     }

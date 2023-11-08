@@ -14,7 +14,7 @@ public class DestroyAfter : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         dieTimer += Time.fixedDeltaTime;
         if (dieTimer > timeToDie)
