@@ -4,34 +4,42 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
+    #region Que hace este codigo?
+    //Tu padre maricon tiene una polla ah no es tu madre ya la quisiera yo,
+    //me dio pena por tu padre el dia que se entero,
+    //que fue la noche de bodas quien lo iba a imaginar que iba a ser a tu padre al que iban a empalar ah no encular,
+    //transesual transesual
+    //Gabriel Garcia Marquez.
+    #endregion
+
     bool keyLeft, keyRight, keyDown, keyUp;
     bool keyJump, keyDash, keyShoot;
 
     bool releasedJump, releasedDash;
 
-    Rigidbody2D rb;
+    Rigidbody2D rb; 
     BoxCollider2D box;
-    Animator anim;
+    Animator anim; //Te da fuerza de voluntad
     SpriteRenderer sprite;
 
     int dir = -1;
 
-    float speed = 0;
-    float maxSpeed = 9;
-    float acceleration = 0.70f;
-    float deceleration = 0.95f;
-    float airDeceleration = 0.95f;
+    float speed = 0; //Droga
+    float maxSpeed = 9; //Mucha droga
+    float acceleration = 0.70f; //Lo rapido que sube (Soy turbo... y me masturbo)
+    float deceleration = 0.95f; //Gatillazo
+    float airDeceleration = 0.95f; //Gatillazo aereo
 
-    float gravity = 1.25f;
-    bool grounded = false;
-    bool wall = false;
-    bool roof = false;
+    float gravity = 1.25f; //Newton XD
+    bool grounded = false; //No se que hace
+    bool wall = false; //Pues un muro
+    bool roof = false; //Pues un perro ladrando (Ingles: Ruffy)
     [SerializeField]
     LayerMask groundCollisionLayer;
 
-    bool jumpUp;
-    float jumpEnd;
-    float jumpHeight = 1.25f;
+    bool jumpUp; //España
+    float jumpEnd; //Yo ya
+    float jumpHeight = 1.25f; //Salntado en altura vertical pa arrbia
     float jumpSpeed = 16.5f;
 
     bool airDash, groundDash;
@@ -39,16 +47,16 @@ public class PlayerMovement : MonoBehaviour
     float dashSpeed = 12;
     float dashTime = 0.35f;
     float dashTimer;
-    bool keepDashSpeed;
+    bool keepDashSpeed; //Que buena esta funcion me gusta
 
-    float spawnAfterimageTime = 0.035f;
+    float spawnAfterimageTime = 0.035f; //Que?
     float spawnAfterimageTimer;
 
-    bool coyote = false;
+    bool coyote = false; //Una especie de perro
     float coyoteTime = 0.55f;
     float coyoteTimer;
 
-    bool jumpBuffer = false;
+    bool jumpBuffer = false; //Ok
     float jBufferTime = 0.35f;
     float jBufferTimer = 0;
 
@@ -286,11 +294,11 @@ public class PlayerMovement : MonoBehaviour
 
                 GameObject afterImage = new GameObject();
                 afterImage.transform.position = transform.position;
-                afterImage.AddComponent<SpriteRenderer>();
-                afterImage.GetComponent<SpriteRenderer>().sprite = sprite.sprite;
-                afterImage.GetComponent<SpriteRenderer>().flipX = sprite.flipX;
-                afterImage.GetComponent<SpriteRenderer>().color = Color.red;
-                afterImage.GetComponent<SpriteRenderer>().sortingOrder = -1;
+                SpriteRenderer spTMP = afterImage.AddComponent<SpriteRenderer>();
+                spTMP.sprite = sprite.sprite;
+                spTMP.flipX = sprite.flipX;
+                spTMP.color = Color.red;
+                spTMP.sortingOrder = -1;
                 afterImage.AddComponent<DestroyAfter>();
                 afterImage.GetComponent<DestroyAfter>().timeToDie = 0.5f;
             }
@@ -299,7 +307,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (wall)
         {
-            speed = 0;
+            speed = 0; //Ta bueno
         }
 
         rb.velocity = new Vector2(dir * speed, rb.velocity.y);
@@ -312,9 +320,9 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D r;
         r = Physics2D.BoxCast(box.bounds.center, new Vector2(box.size.x, box.size.y/2), 0, Vector2.down, 1, groundCollisionLayer);
 
-        bool yeah = (r.collider != null && r.collider.tag == "Ground" && r.normal.y > 0);
+        bool yeahyeahperdonenkamekamekadespuesdeltemadeltetrisvieneeldragonballrap = (r.collider != null && r.collider.tag == "Ground" && r.normal.y > 0);
         
-        if (yeah)
+        if (yeahyeahperdonenkamekamekadespuesdeltemadeltetrisvieneeldragonballrap)
         {
             if (!prevGround)
             {
@@ -334,7 +342,7 @@ public class PlayerMovement : MonoBehaviour
                 coyoteTimer = 0;
             }
         }
-        return yeah;
+        return yeahyeahperdonenkamekamekadespuesdeltemadeltetrisvieneeldragonballrap;
     }
 
     private bool WallCheck()
