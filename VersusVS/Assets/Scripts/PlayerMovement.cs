@@ -35,7 +35,8 @@ public class PlayerMovement : MonoBehaviour
     Animator anim;
     SpriteRenderer sprite;
 
-    int dir = -1;
+    Vector2 dir = new Vector2(1, 0);
+
 
     float speed = 0;
     float maxSpeed = 12;
@@ -96,6 +97,7 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        Debug.Log(dir);
         wall = WallCheck();
         grounded = GroundCheck();
         anim.SetBool("Ground", grounded);
@@ -253,17 +255,41 @@ public class PlayerMovement : MonoBehaviour
         #region Movement
         if (keyLeft && !keyRight)
         {
-            if (!airDash || dir == -1)
+            if (!airDash || dir.x == -1)
             {
-                dir = -1;
+                dir.x = -1;
             }
         }
-        if (!keyLeft && keyRight)
+        else if (!keyLeft && keyRight)
         {
-            if (!airDash || dir == 1)
+            if (!airDash || dir.x == 1)
             {
-                dir = 1;
+                dir.x = 1;
             }
+        }
+        else
+        {
+            dir.x = 0;
+        }
+       
+
+        if(!keyUp && keyDown)
+        {
+            if(!airDash || dir.y == -1)
+            {
+                dir.y = -1;
+            }
+        }
+        else if (!keyDown && keyUp)
+        {
+            if (!airDash || dir.y == 1)
+            {
+                dir.y = 1;
+            }
+        }
+        else
+        {
+            dir.y = 0;
         }
 
         if (!keyLeft && !keyRight)
@@ -299,7 +325,7 @@ public class PlayerMovement : MonoBehaviour
         }
         #endregion
 
-        GetComponent<SpriteRenderer>().flipX = dir == 1;
+        GetComponent<SpriteRenderer>().flipX = dir.x == 1;
 
         #region Jump
         if (roof)
@@ -346,6 +372,7 @@ public class PlayerMovement : MonoBehaviour
                 if (groundDash)
                 {
                     keepDashBuffer = true;
+
                     kdBufferTimer = 0;
                 }
 
@@ -400,7 +427,7 @@ public class PlayerMovement : MonoBehaviour
             speed = 0;
         }
 
-        rb.velocity = new Vector2(dir * speed, rb.velocity.y);
+        rb.velocity = new Vector2(dir.x * speed, rb.velocity.y);
     }
 
     private bool GroundCheck()
@@ -439,7 +466,7 @@ public class PlayerMovement : MonoBehaviour
     {
         RaycastHit2D r;
         r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.right*dir, box.size.x/2, groundCollisionLayer);
-        return (r.collider != null && r.normal.x != dir && r.normal.x != 0);
+        return (r.collider != null && r.normal.x != dir.x && r.normal.x != 0);
     }
 
     private bool RoofCheck()
