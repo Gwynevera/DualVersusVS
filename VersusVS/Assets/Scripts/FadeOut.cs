@@ -15,18 +15,20 @@ public class FadeOut : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        s = GetComponent<SpriteRenderer>();
+        fadeRate = Time.fixedDeltaTime * (totalAlpha / timeToFade);
     }
 
-    public void CalculateFadeRate()
+    void CalculateFadeRate()
     {
-        s = GetComponent<SpriteRenderer>();
-        fadeRate = Time.fixedDeltaTime * timeToFade;
+        //s = GetComponent<SpriteRenderer>();
+        //fadeRate = Time.fixedDeltaTime * (totalAlpha / timeToFade);
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (s != null || s.color.a > 0)
+        if (s != null && s.color.a > 0)
         {
             float a = s.color.a - fadeRate;
             s.color = new Color(s.color.r, s.color.g, s.color.b, a);

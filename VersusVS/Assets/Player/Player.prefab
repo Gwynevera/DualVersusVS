@@ -48,9 +48,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da4cf020789998945ba61cf3c64641c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  keyLeft: 0
+  keyRight: 0
+  keyDown: 0
+  keyUp: 0
+  keyJump: 0
+  keyDash: 0
+  keyShoot: 0
+  releasedJump: 0
+  releasedDash: 0
+  dir: -1
+  grounded: 0
+  wall: 0
+  roof: 0
   groundCollisionLayer:
     serializedVersion: 2
     m_Bits: 128
+  jumpUp: 0
+  jumpEnd: 0
+  airDash: 0
+  groundDash: 0
+  canAirDash: 0
+  keepDashSpeed: 0
+  afterImage: {fileID: 7281531033563323186, guid: 97180c704576edd4e96115ab6d9489dd, type: 3}
+  coyote: 0
+  jumpBuffer: 0
+  keepDashBuffer: 0
 --- !u!61 &72671939285683359
 BoxCollider2D:
   m_ObjectHideFlags: 0

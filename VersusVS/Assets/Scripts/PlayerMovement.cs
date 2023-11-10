@@ -25,62 +25,81 @@ public class PlayerMovement : MonoBehaviour
     public MyPlayerKeys myKeys;
     PlayerKeys pKeyScript;
 
-    bool keyLeft, keyRight, keyDown, keyUp;
-    bool keyJump, keyDash, keyShoot;
+    [Header("Keys")]
+    public bool keyLeft;
+    public bool keyRight;
+    public bool keyDown;
+    public bool keyUp;
+    public bool keyJump;
+    public bool keyDash;
+    public bool keyShoot;
 
-    bool releasedJump, releasedDash;
+    public bool releasedJump;
+    public bool releasedDash;
 
     Rigidbody2D rb;
     BoxCollider2D box;
     Animator anim;
     SpriteRenderer sprite;
 
-    int dir = -1;
+    [Header("Direction")]
+    public int dir = -1;
 
+    [Header("Speed")]
     float speed = 0;
-    float maxSpeed = 12;
-    float acceleration = 0.50f;
+    float maxSpeed = 10;
+    [Header("Acceleration")]
+    float acceleration = 0.75f;
     float deceleration = 0.95f;
-    float airDeceleration = 0.95f;
+    float airDeceleration = 0.8f;
 
+    [Header("Gravity")]
     float gravity = 1;
-    bool grounded = false;
-    bool wall = false;
-    bool roof = false;
+    [Header("Collisions")]
+    public bool grounded = false;
+    public bool wall = false;
+    public bool roof = false;
     [SerializeField]
     LayerMask groundCollisionLayer;
 
-    bool jumpUp;
-    float jumpEnd;
+    [Header("Jump")]
+    public bool jumpUp;
+    public float jumpEnd;
     float jumpHeight = 2;
     float jumpSpeed = 18;
 
-    bool airDash, groundDash;
-    bool canAirDash;
-    float dashSpeed = 20;
-    float dashTime = 0.2f;
+    [Header("Dash")]
+    public bool airDash, groundDash;
+    public bool canAirDash;
+    float dashSpeed = 15;
+    float dashTime = 0.35f;
     float dashTimer;
-    bool keepDashSpeed;
+    public bool keepDashSpeed;
 
-    float spawnAfterimageTime = 0.035f;
+    [Header("Afterimage")]
+    public GameObject afterImage;
+    float spawnAfterimageTime = 0.015f;
     float spawnAfterimageTimer;
-    bool keepSpawn = false;
-    float keepSpawnTime = 0.25f;
+    public bool keepSpawn = false;
+    float keepSpawnTime = 1;
     float keepSpawnTimer = 0;
 
-    bool coyote = false;
+    [Header("Coyote")]
+    public bool coyote = false;
     float coyoteTime = 0.2f;
     float coyoteTimer;
 
-    bool jumpBuffer = false;
+    [Header("Jump Buffer")]
+    public bool jumpBuffer = false;
     float jBufferTime = 0.15f;
     float jBufferTimer = 0;
 
-    bool keepDashBuffer = false;
+    [Header("Keep Dash Buffer")]
+    public bool keepDashBuffer = false;
     float kdBufferTime = 0.25f;
     float kdBufferTimer = 0;
 
-    // Start is called before the first frame update
+    // Start
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -91,16 +110,20 @@ public class PlayerMovement : MonoBehaviour
         pKeyScript = new PlayerKeys();
         myKeys = new MyPlayerKeys();
         pKeyScript.SetPlayerKeys(ref myKeys);
+
+        // Setup AfterImage Objects
     }
 
-    // Update is called once per frame
+    // Update
     void FixedUpdate()
     {
+        // Check collisions
+        roof = RoofCheck();
         wall = WallCheck();
         grounded = GroundCheck();
         anim.SetBool("Ground", grounded);
-        roof = RoofCheck();
 
+        #region Coyote
         if (coyote)
         {
             coyoteTimer += Time.fixedDeltaTime;
@@ -109,7 +132,8 @@ public class PlayerMovement : MonoBehaviour
                 coyote = false;
             }
         }
-
+        #endregion
+        #region Jump Buffer
         if (jumpBuffer)
         {
             releasedJump = true;
@@ -120,7 +144,8 @@ public class PlayerMovement : MonoBehaviour
                 releasedJump = false;
             }
         }
-
+        #endregion
+        #region Keep Dash Buffer
         if (keepDashBuffer)
         {
             kdBufferTimer += Time.fixedDeltaTime;
@@ -129,11 +154,13 @@ public class PlayerMovement : MonoBehaviour
                 keepDashBuffer = false;
             }
         }
+        #endregion
 
         #region Inputs
         if (myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player1_Keyboard || 
             myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player2_Keyboard)
         {
+            // Player 1/2 - Teclado
             keyRight = Input.GetKey(myKeys.rightKey);
             keyLeft = Input.GetKey(myKeys.leftKey);
             keyUp = Input.GetKey(myKeys.upKey);
@@ -141,6 +168,7 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
+            // Player 1 - Mando
             if (myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player1_Gamepad)
             {
                 keyRight = Input.GetAxis(pKeyScript.g1PadX) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g1StickX) >= pKeyScript.minStickValue;
@@ -148,6 +176,7 @@ public class PlayerMovement : MonoBehaviour
                 keyUp =    Input.GetAxis(pKeyScript.g1PadY) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g1StickY) >= pKeyScript.minStickValue;
                 keyDown =  Input.GetAxis(pKeyScript.g1PadY) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g1StickY) <= -pKeyScript.minStickValue;
             }
+            // Player 2 - Mando
             else if (myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player2_Gamepad)
             {
                 keyRight = Input.GetAxis(pKeyScript.g2PadX) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g2StickX) >= pKeyScript.minStickValue;
@@ -175,6 +204,7 @@ public class PlayerMovement : MonoBehaviour
                 jumpEnd = transform.position.y + jumpHeight;
                 anim.SetBool("Jump", true);
 
+                // Mantener velocidad del Dash
                 if (groundDash || keepDashBuffer)
                 {
                     groundDash = false;
@@ -184,6 +214,7 @@ public class PlayerMovement : MonoBehaviour
                 }
             }
 
+            // Salto Buffer
             if (!grounded && !jumpBuffer && jBufferTimer == 0)
             {
                 jumpBuffer = true;
@@ -212,7 +243,6 @@ public class PlayerMovement : MonoBehaviour
         {
             if (releasedDash)
             {
-                releasedDash = false;
                 if (grounded)
                 {
                     groundDash = true;
@@ -227,9 +257,14 @@ public class PlayerMovement : MonoBehaviour
                 if (groundDash || airDash)
                 {
                     dashTimer = 0;
-                    spawnAfterimageTimer = 0;
                     anim.SetBool("Dash", true);
+
+                    if (releasedDash)
+                    {
+                        spawnAfterimageTimer = spawnAfterimageTime;
+                    }
                 }
+                releasedDash = false;
             }
         }
         else
@@ -238,9 +273,6 @@ public class PlayerMovement : MonoBehaviour
             {
                 keepDashBuffer = true;
                 kdBufferTimer = 0;
-
-                keepSpawn = true;
-                keepSpawnTimer = 0;
             }
 
             releasedDash = true;
@@ -253,6 +285,7 @@ public class PlayerMovement : MonoBehaviour
         #region Movement
         if (keyLeft && !keyRight)
         {
+            // Izquierda
             if (!airDash || dir == -1)
             {
                 dir = -1;
@@ -260,12 +293,14 @@ public class PlayerMovement : MonoBehaviour
         }
         if (!keyLeft && keyRight)
         {
+            // Derecha
             if (!airDash || dir == 1)
             {
                 dir = 1;
             }
         }
 
+        // Parao
         if (!keyLeft && !keyRight)
         {
             if (speed > 0)
@@ -285,6 +320,7 @@ public class PlayerMovement : MonoBehaviour
             }
             anim.SetBool("Run", false);
         }
+        // Moviendose
         else
         {
             if (speed < maxSpeed)
@@ -299,33 +335,34 @@ public class PlayerMovement : MonoBehaviour
         }
         #endregion
 
+        // Flip Sprite
         GetComponent<SpriteRenderer>().flipX = dir == 1;
 
         #region Jump
+        // Chocao
         if (roof)
         {
             jumpUp = false;
         }
 
-        if (!jumpUp)
+        // Salto parriba
+        if (jumpUp)
         {
-            float extraGravity = rb.velocity.y > 0 ? gravity/2 : 0;
-            rb.velocity -= new Vector2(0, gravity /*+ extraGravity*/);
+            if (transform.position.y > jumpEnd)
+            {
+                rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y);
+                jumpUp = false;
+            }
+            else
+            {
+                rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
+            }
         }
+        // Apply Gravity
         else
         {
-            if (jumpUp)
-            {
-                if (transform.position.y > jumpEnd)
-                {
-                    rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y);
-                    jumpUp = false;
-                }
-                else
-                {
-                    rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
-                }
-            }
+            float extraGravity = rb.velocity.y > 0 ? gravity / 2 : 0;
+            rb.velocity -= new Vector2(0, gravity /*+ extraGravity*/);
         }
         anim.SetBool("Jump", jumpUp);
         #endregion
@@ -349,19 +386,25 @@ public class PlayerMovement : MonoBehaviour
                     kdBufferTimer = 0;
                 }
 
+                if (groundDash && !keepDashSpeed)
+                {
+                    keepSpawn = true;
+                    keepSpawnTimer = keepSpawnTime;
+                }
+
                 groundDash = airDash = false;
                 anim.SetBool("Dash", false);
 
-                keepSpawn = true;
-                keepSpawnTimer = 0;
             }
         }
         
+        // Set Dash Speed
         if (keepDashSpeed && (keyLeft || keyRight))
         {
             speed = dashSpeed;
         }
 
+        // Keep spawning afterimages a bit more
         if (keepSpawn)
         {
             keepSpawnTimer += Time.fixedDeltaTime;
@@ -371,35 +414,37 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
+        // Spawn Afterimages
         if (groundDash || airDash || keepDashSpeed || keepSpawn)
         {
-
             spawnAfterimageTimer += Time.fixedDeltaTime;
-            if (spawnAfterimageTimer > spawnAfterimageTime)
+            if (spawnAfterimageTimer >= spawnAfterimageTime)
             {
                 spawnAfterimageTimer = 0;
 
-                GameObject afterImage = new GameObject();
-                afterImage.transform.position = transform.position;
-                afterImage.AddComponent<SpriteRenderer>();
-                afterImage.GetComponent<SpriteRenderer>().sprite = sprite.sprite;
-                afterImage.GetComponent<SpriteRenderer>().flipX = sprite.flipX;
-                afterImage.GetComponent<SpriteRenderer>().color = Color.red;
-                afterImage.GetComponent<SpriteRenderer>().sortingOrder = -1;
-                afterImage.AddComponent<DestroyAfter>();
-                afterImage.GetComponent<DestroyAfter>().timeToDie = 0.5f;
-                afterImage.AddComponent<FadeOut>();
-                afterImage.GetComponent<FadeOut>().timeToFade = 0.5f;
-                afterImage.GetComponent<FadeOut>().CalculateFadeRate();
+                GameObject a = Instantiate(afterImage, transform.position, transform.rotation, null);
+                a.name = "a";
+                SpriteRenderer s = a.GetComponent<SpriteRenderer>();
+                s.sprite = sprite.sprite;
+                s.sortingOrder = -1;
+
+                if (keepSpawn)
+                {
+                    float percent = keepSpawnTimer/keepSpawnTime;
+                    s.color = new Color(s.color.r, s.color.g, s.color.b, percent);
+                }
+
             }
         }
         #endregion
 
+        // Parate no
         if (wall)
         {
             speed = 0;
         }
 
+        // Ponle la Velosida
         rb.velocity = new Vector2(dir * speed, rb.velocity.y);
     }
 
@@ -410,9 +455,10 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D r;
         r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.down, box.size.y/2, groundCollisionLayer);
 
-        bool yeah = (r.collider != null && r.collider.tag == "Ground" && r.normal.y > 0);
+        bool yeahyeahperdonenkamekamekadespuesdeltemadeltetrisvieneeldragonballrap 
+             = (r.collider != null && r.collider.tag == "Ground" && r.normal.y > 0);
         
-        if (yeah)
+        if (yeahyeahperdonenkamekamekadespuesdeltemadeltetrisvieneeldragonballrap)
         {
             if (!prevGround)
             {
@@ -432,7 +478,7 @@ public class PlayerMovement : MonoBehaviour
                 coyoteTimer = 0;
             }
         }
-        return yeah;
+        return yeahyeahperdonenkamekamekadespuesdeltemadeltetrisvieneeldragonballrap;
     }
 
     private bool WallCheck()
