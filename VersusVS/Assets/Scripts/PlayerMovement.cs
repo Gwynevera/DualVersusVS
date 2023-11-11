@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public class MyPlayerKeys
+    /*public class MyPlayerKeys
     {
         public PlayerKeys.PlayerKeysType playerKeys;
 
@@ -26,8 +26,8 @@ public class PlayerMovement : MonoBehaviour
         {
             playerKeys = p;
         }
-    }
-    public MyPlayerKeys myKeys;
+    }*/
+    //public MyPlayerKeys myKeys;
     public PlayerKeys.PlayerKeysType playerKeysIndex;
     PlayerKeys pKeyScript;
 
@@ -115,8 +115,8 @@ public class PlayerMovement : MonoBehaviour
         sprite = GetComponent<SpriteRenderer>();
 
         pKeyScript = new PlayerKeys();
-        myKeys = new MyPlayerKeys(playerKeysIndex);
-        pKeyScript.SetPlayerKeys(ref myKeys);
+        //myKeys = new MyPlayerKeys(playerKeysIndex);
+        //pKeyScript.SetPlayerKeys(ref myKeys);
 
         // Setup AfterImage Objects
     }
@@ -184,7 +184,7 @@ public class PlayerMovement : MonoBehaviour
         }
         #endregion
 
-        #region Inputs
+        /*#region Inputs
         if (myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player1_Keyboard || 
             myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player2_Keyboard)
         {
@@ -215,7 +215,7 @@ public class PlayerMovement : MonoBehaviour
         }
         keyJump = Input.GetKey(myKeys.jumpKey);
         keyDash = Input.GetKey(myKeys.dashkey);
-        #endregion
+        #endregion*/
 
         #region Jump Key
         if (keyJump)

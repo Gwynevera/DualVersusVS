@@ -76,7 +76,7 @@ public class PlayerKeys
         None
     }
 
-    public void SetPlayerKeys(ref PlayerMovement.MyPlayerKeys _p)
+    public void SetPlayerKeys(ref Player2.MyPlayerKeys _p)
     {
         switch (_p.playerKeys)
         {

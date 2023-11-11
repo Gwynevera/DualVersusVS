@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 8452710764873561863}
   - component: {fileID: 1229234528339808000}
   - component: {fileID: 7665335529616239817}
+  - component: {fileID: 4315090773650565494}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -43,11 +44,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4552636734402091311}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: da4cf020789998945ba61cf3c64641c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerKeysIndex: 0
   keyLeft: 0
   keyRight: 0
   keyDown: 0
@@ -57,7 +59,7 @@ MonoBehaviour:
   keyShoot: 0
   releasedJump: 0
   releasedDash: 0
-  dir: -1
+  dir: {x: 1, y: 0}
   grounded: 0
   wall: 0
   roof: 0
@@ -66,8 +68,8 @@ MonoBehaviour:
     m_Bits: 128
   jumpUp: 0
   jumpEnd: 0
-  airDash: 0
   groundDash: 0
+  airDash: 0
   canAirDash: 0
   keepDashSpeed: 0
   afterImage: {fileID: 7281531033563323186, guid: 97180c704576edd4e96115ab6d9489dd, type: 3}
@@ -219,3 +221,38 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
+--- !u!114 &4315090773650565494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4552636734402091311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b262dd0d2f92c54681b35aeebcc5c7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerKeysIndex: 0
+  keyLeft: 0
+  keyRight: 0
+  keyDown: 0
+  keyUp: 0
+  keyJump: 0
+  keyDash: 0
+  keyShoot: 0
+  prevJump: 0
+  prevDash: 0
+  dir: {x: 0, y: 0}
+  speed: 0
+  grounded: 0
+  wall: 0
+  roof: 0
+  groundCollisionLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  dash: 0
+  afterImage: {fileID: 7281531033563323186, guid: 97180c704576edd4e96115ab6d9489dd, type: 3}
+  coyote: 0
+  jumpBuffer: 0
+  keepDashBuffer: 0
