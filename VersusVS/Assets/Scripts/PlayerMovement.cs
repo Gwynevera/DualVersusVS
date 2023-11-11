@@ -47,14 +47,14 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Speed")]
     float speed = 0;
-    float maxSpeed = 10;
+    float maxSpeed = 12;
     [Header("Acceleration")]
     float acceleration = 0.75f;
     float deceleration = 0.95f;
     float airDeceleration = 0.8f;
 
     [Header("Gravity")]
-    float gravity = 1;
+    float gravity = 1.2f;
     [Header("Collisions")]
     public bool grounded = false;
     public bool wall = false;
@@ -65,24 +65,21 @@ public class PlayerMovement : MonoBehaviour
     [Header("Jump")]
     public bool jumpUp;
     public float jumpEnd;
-    float jumpHeight = 2;
-    float jumpSpeed = 18;
+    float jumpHeight = 1.2f;
+    float jumpSpeed = 12;
 
     [Header("Dash")]
     public bool airDash, groundDash;
     public bool canAirDash;
-    float dashSpeed = 15;
+    float dashSpeed = 18;
     float dashTime = 0.35f;
     float dashTimer;
     public bool keepDashSpeed;
 
     [Header("Afterimage")]
     public GameObject afterImage;
-    float spawnAfterimageTime = 0.015f;
+    float spawnAfterimageTime = 0.0175f;
     float spawnAfterimageTimer;
-    public bool keepSpawn = false;
-    float keepSpawnTime = 1;
-    float keepSpawnTimer = 0;
 
     [Header("Coyote")]
     public bool coyote = false;
@@ -96,7 +93,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Keep Dash Buffer")]
     public bool keepDashBuffer = false;
-    float kdBufferTime = 0.25f;
+    float kdBufferTime = 0.1f;
     float kdBufferTimer = 0;
 
     // Start
@@ -152,6 +149,23 @@ public class PlayerMovement : MonoBehaviour
             if (kdBufferTimer > kdBufferTime)
             {
                 keepDashBuffer = false;
+            }
+        }
+        #endregion
+        #region Afterimage
+        // Spawn Afterimages
+        if (groundDash || airDash || keepDashSpeed)
+        {
+            spawnAfterimageTimer += Time.fixedDeltaTime;
+            if (spawnAfterimageTimer >= spawnAfterimageTime)
+            {
+                spawnAfterimageTimer = 0;
+
+                GameObject a = Instantiate(afterImage, transform.position, transform.rotation, null);
+                a.name = "a";
+                SpriteRenderer s = a.GetComponent<SpriteRenderer>();
+                s.sprite = sprite.sprite;
+                s.sortingOrder = -1;
             }
         }
         #endregion
@@ -252,24 +266,22 @@ public class PlayerMovement : MonoBehaviour
                     airDash = true;
                     canAirDash = false;
                     keepDashSpeed = true;
+
+                    jumpUp = false;
+                    releasedJump = false;
                 }
 
                 if (groundDash || airDash)
                 {
                     dashTimer = 0;
                     anim.SetBool("Dash", true);
-
-                    if (releasedDash)
-                    {
-                        spawnAfterimageTimer = spawnAfterimageTime;
-                    }
                 }
                 releasedDash = false;
             }
         }
         else
         {
-            if (groundDash)
+            if (groundDash || airDash)
             {
                 keepDashBuffer = true;
                 kdBufferTimer = 0;
@@ -385,11 +397,9 @@ public class PlayerMovement : MonoBehaviour
                     keepDashBuffer = true;
                     kdBufferTimer = 0;
                 }
-
-                if (groundDash && !keepDashSpeed)
+                if (airDash)
                 {
-                    keepSpawn = true;
-                    keepSpawnTimer = keepSpawnTime;
+                    keepDashSpeed = true;
                 }
 
                 groundDash = airDash = false;
@@ -402,39 +412,6 @@ public class PlayerMovement : MonoBehaviour
         if (keepDashSpeed && (keyLeft || keyRight))
         {
             speed = dashSpeed;
-        }
-
-        // Keep spawning afterimages a bit more
-        if (keepSpawn)
-        {
-            keepSpawnTimer += Time.fixedDeltaTime;
-            if (keepSpawnTimer > keepSpawnTime)
-            {
-                keepSpawn = false;
-            }
-        }
-
-        // Spawn Afterimages
-        if (groundDash || airDash || keepDashSpeed || keepSpawn)
-        {
-            spawnAfterimageTimer += Time.fixedDeltaTime;
-            if (spawnAfterimageTimer >= spawnAfterimageTime)
-            {
-                spawnAfterimageTimer = 0;
-
-                GameObject a = Instantiate(afterImage, transform.position, transform.rotation, null);
-                a.name = "a";
-                SpriteRenderer s = a.GetComponent<SpriteRenderer>();
-                s.sprite = sprite.sprite;
-                s.sortingOrder = -1;
-
-                if (keepSpawn)
-                {
-                    float percent = keepSpawnTimer/keepSpawnTime;
-                    s.color = new Color(s.color.r, s.color.g, s.color.b, percent);
-                }
-
-            }
         }
         #endregion
 
@@ -453,21 +430,19 @@ public class PlayerMovement : MonoBehaviour
         bool prevGround = grounded;
 
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.down, box.size.y/2, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(1, 0.5f), 0, Vector2.down, box.size.y/2, groundCollisionLayer);
 
         bool yeahyeahperdonenkamekamekadespuesdeltemadeltetrisvieneeldragonballrap 
              = (r.collider != null && r.collider.tag == "Ground" && r.normal.y > 0);
         
         if (yeahyeahperdonenkamekamekadespuesdeltemadeltetrisvieneeldragonballrap)
         {
-            if (!prevGround)
+            anim.SetBool("Jump", false);
+            canAirDash = true;
+            spawnAfterimageTimer = 0;
+            if (prevGround)
             {
-                anim.SetBool("Jump", false);
-                canAirDash = true;
-                if (!jumpUp)
-                {
-                    keepDashSpeed = false;
-                }
+                keepDashSpeed = false;
             }
         }
         else
@@ -484,14 +459,14 @@ public class PlayerMovement : MonoBehaviour
     private bool WallCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.right*dir, box.size.x/2, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.right*dir, 0, groundCollisionLayer);
         return (r.collider != null && r.normal.x != dir && r.normal.x != 0);
     }
 
     private bool RoofCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.up, box.size.y/2, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.up, 0, groundCollisionLayer);
 
         return r.collider != null;
     }
