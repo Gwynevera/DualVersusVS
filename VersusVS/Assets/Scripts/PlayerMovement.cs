@@ -21,8 +21,14 @@ public class PlayerMovement : MonoBehaviour
         {
             playerKeys = PlayerKeys.PlayerKeysType.Player1_Keyboard;
         }
+
+        public MyPlayerKeys(PlayerKeys.PlayerKeysType p)
+        {
+            playerKeys = p;
+        }
     }
     public MyPlayerKeys myKeys;
+    public PlayerKeys.PlayerKeysType playerKeysIndex;
     PlayerKeys pKeyScript;
 
     [Header("Keys")]
@@ -105,7 +111,7 @@ public class PlayerMovement : MonoBehaviour
         sprite = GetComponent<SpriteRenderer>();
 
         pKeyScript = new PlayerKeys();
-        myKeys = new MyPlayerKeys();
+        myKeys = new MyPlayerKeys(playerKeysIndex);
         pKeyScript.SetPlayerKeys(ref myKeys);
 
         // Setup AfterImage Objects

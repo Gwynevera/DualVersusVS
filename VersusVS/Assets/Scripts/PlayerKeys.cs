@@ -23,14 +23,14 @@ public class PlayerKeys
     KeyCode attackP2keyboard = KeyCode.Keypad4;
 
     // Player 1 - Gamepad
-    KeyCode jumpP1gamepad = KeyCode.Joystick1Button1;   // X (Ekis)
+    KeyCode jumpP1gamepad = KeyCode.Joystick1Button0;   // X (Ekis)
     KeyCode dashP1gamepad = KeyCode.Joystick1Button4;   // L1
-    KeyCode attackP1gamepad = KeyCode.Joystick1Button0; // Cuadrao
+    KeyCode attackP1gamepad = KeyCode.Joystick1Button2; // Cuadrao
 
     // Player 2 - Gamepad
-    KeyCode jumpP2gamepad = KeyCode.Joystick2Button1;
+    KeyCode jumpP2gamepad = KeyCode.Joystick2Button0;
     KeyCode dashP2gamepad = KeyCode.Joystick2Button4;
-    KeyCode attackP2gamepad = KeyCode.Joystick2Button0;
+    KeyCode attackP2gamepad = KeyCode.Joystick2Button2;
 
     // Axis names
     public string g1PadX = "DPad1_X";
@@ -47,9 +47,9 @@ public class PlayerKeys
 
     #region Controles de Play
     /*
-    Square   = Joystick Button 0
-    X        = Joystick Button 1
-    Circle   = Joystick Button 2
+    X        = Joystick Button 0
+    Circle   = Joystick Button 1
+    Square   = Joystick Button 2
     Triangle = Joystick Button 3
     L1       = Joystick Button 4
     R1       = Joystick Button 5
