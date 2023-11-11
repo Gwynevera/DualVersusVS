@@ -49,18 +49,19 @@ public class PlayerMovement : MonoBehaviour
     SpriteRenderer sprite;
 
     [Header("Direction")]
-    public int dir = -1;
+    public Vector2 dir = new Vector2(1, 0);
+    bool noX;
 
     [Header("Speed")]
     float speed = 0;
     float maxSpeed = 12;
     [Header("Acceleration")]
-    float acceleration = 0.75f;
-    float deceleration = 0.95f;
-    float airDeceleration = 0.8f;
+    float acceleration = 1;
+    float deceleration = 2;
+    float airDeceleration = 1;
 
     [Header("Gravity")]
-    float gravity = 1.2f;
+    float gravity = 1.5f;
     [Header("Collisions")]
     public bool grounded = false;
     public bool wall = false;
@@ -75,12 +76,15 @@ public class PlayerMovement : MonoBehaviour
     float jumpSpeed = 12;
 
     [Header("Dash")]
-    public bool airDash, groundDash;
+    public bool groundDash;
+    public bool airDash;
     public bool canAirDash;
-    float dashSpeed = 18;
-    float dashTime = 0.35f;
+    float dashSpeed = 35;
+    float dashTime = 0.1f;
     float dashTimer;
     public bool keepDashSpeed;
+    bool verticalDash;
+    float diagonalDashMod = 0.6f;
 
     [Header("Afterimage")]
     public GameObject afterImage;
@@ -172,6 +176,10 @@ public class PlayerMovement : MonoBehaviour
                 SpriteRenderer s = a.GetComponent<SpriteRenderer>();
                 s.sprite = sprite.sprite;
                 s.sortingOrder = -1;
+                if (groundDash || airDash)
+                {
+                    s.color = Color.red;
+                }
             }
         }
         #endregion
@@ -231,6 +239,7 @@ public class PlayerMovement : MonoBehaviour
                     anim.SetBool("Dash", false);
                     dashTimer = dashTime;
                     keepDashSpeed = true;
+                    rb.velocity *= diagonalDashMod;
                 }
             }
 
@@ -263,6 +272,7 @@ public class PlayerMovement : MonoBehaviour
         {
             if (releasedDash)
             {
+                verticalDash = false;
                 if (grounded)
                 {
                     groundDash = true;
@@ -291,6 +301,7 @@ public class PlayerMovement : MonoBehaviour
             {
                 keepDashBuffer = true;
                 kdBufferTimer = 0;
+                rb.velocity *= new Vector2(1, rb.velocity.y > 0 ? diagonalDashMod : 1);
             }
 
             releasedDash = true;
@@ -304,18 +315,53 @@ public class PlayerMovement : MonoBehaviour
         if (keyLeft && !keyRight)
         {
             // Izquierda
-            if (!airDash || dir == -1)
+            if (!airDash || dir.x == -1)
             {
-                dir = -1;
+                dir.x = -1;
             }
+
+            if (noX && !airDash)
+            {
+                verticalDash = false;
+            }
+            noX = false;
         }
-        if (!keyLeft && keyRight)
+        else if (!keyLeft && keyRight)
         {
             // Derecha
-            if (!airDash || dir == 1)
+            if (!airDash || dir.x == 1)
             {
-                dir = 1;
+                dir.x = 1;
             }
+
+            if (noX && !airDash)
+            {
+                verticalDash = false;
+            }
+            noX = false;
+        }
+        else
+        {
+            noX = true;
+        }
+
+	    if (!keyUp && keyDown)
+        {
+            if(!airDash || dir.y == -1)
+            {
+                dir.y = -1;
+            }
+        }
+        else if (!keyDown && keyUp)
+        {
+            if (!airDash || dir.y == 1)
+            {
+                dir.y = 1;
+            }
+        }
+        else
+        {
+            dir.y = 0;
         }
 
         // Parao
@@ -354,7 +400,7 @@ public class PlayerMovement : MonoBehaviour
         #endregion
 
         // Flip Sprite
-        GetComponent<SpriteRenderer>().flipX = dir == 1;
+        GetComponent<SpriteRenderer>().flipX = dir.x == 1;
 
         #region Jump
         // Chocao
@@ -368,7 +414,6 @@ public class PlayerMovement : MonoBehaviour
         {
             if (transform.position.y > jumpEnd)
             {
-                rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y);
                 jumpUp = false;
             }
             else
@@ -379,8 +424,7 @@ public class PlayerMovement : MonoBehaviour
         // Apply Gravity
         else
         {
-            float extraGravity = rb.velocity.y > 0 ? gravity / 2 : 0;
-            rb.velocity -= new Vector2(0, gravity /*+ extraGravity*/);
+            rb.velocity -= new Vector2(0, gravity);
         }
         anim.SetBool("Jump", jumpUp);
         #endregion
@@ -392,7 +436,25 @@ public class PlayerMovement : MonoBehaviour
 
             if (airDash)
             {
-                rb.velocity *= new Vector2(1, 0);
+                Vector2 d = new Vector2();
+                if (dir.y == 0)
+                {
+                    d = new Vector2(dir.x, 0);
+                }
+                else
+                {
+                    if (noX)
+                    {
+                        d = new Vector2(0, dir.y);
+                        verticalDash = true;
+                    }
+                    else
+                    {
+                        d = dir*diagonalDashMod;
+                    }
+                }
+
+                rb.velocity = d * dashSpeed;
             }
 
             dashTimer += Time.fixedDeltaTime;
@@ -410,7 +472,7 @@ public class PlayerMovement : MonoBehaviour
 
                 groundDash = airDash = false;
                 anim.SetBool("Dash", false);
-
+                rb.velocity *= new Vector2(1, rb.velocity.y > 0 ? diagonalDashMod : 1);
             }
         }
         
@@ -418,6 +480,10 @@ public class PlayerMovement : MonoBehaviour
         if (keepDashSpeed && (keyLeft || keyRight))
         {
             speed = dashSpeed;
+            if (!canAirDash)
+            {
+                speed *= diagonalDashMod;
+            }
         }
         #endregion
 
@@ -428,7 +494,10 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // Ponle la Velosida
-        rb.velocity = new Vector2(dir * speed, rb.velocity.y);
+        if (!airDash)
+        {
+            rb.velocity = new Vector2((verticalDash ? 0 : dir.x) * speed, rb.velocity.y);
+        }
     }
 
     private bool GroundCheck()
@@ -444,6 +513,12 @@ public class PlayerMovement : MonoBehaviour
         if (yeahyeahperdonenkamekamekadespuesdeltemadeltetrisvieneeldragonballrap)
         {
             anim.SetBool("Jump", false);
+            if (airDash)
+            {
+                keepDashBuffer = true;
+                kdBufferTimer = 0;
+            }
+            airDash = false;
             canAirDash = true;
             spawnAfterimageTimer = 0;
             if (prevGround)
@@ -465,8 +540,8 @@ public class PlayerMovement : MonoBehaviour
     private bool WallCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.right*dir, 0, groundCollisionLayer);
-        return (r.collider != null && r.normal.x != dir && r.normal.x != 0);
+        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.right*dir.x, 0, groundCollisionLayer);
+        return (r.collider != null && r.normal.x != dir.x && r.normal.x != 0);
     }
 
     private bool RoofCheck()
