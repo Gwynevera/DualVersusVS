@@ -50,17 +50,13 @@ public class Player2 : MonoBehaviour
 
     [Header("Direction")]
     public Vector2 dir = new Vector2();
+    int lastXdir;
 
     [Header("Speed")]
-    public float speed;
-    float minSpeed = 7;
-    float maxSpeed = 15;
-
-    [Header("Acceleration")]
-    float acceleration = 0.1f;
+    float speed = 10;
 
     [Header("Gravity")]
-    float gravity = 2;
+    float gravity = 2.25f;
 
     [Header("Collisions")]
     public bool grounded = false;
@@ -71,8 +67,9 @@ public class Player2 : MonoBehaviour
 
     [Header("Jump")]
     public bool jump;
+    public bool endJump;
     float jumpSpeed = 15;
-    float jumpHeight = 1.75f;
+    float jumpHeight = 2.25f;
     float jumpTop;
     public bool keepDashSpeed;
 
@@ -83,6 +80,7 @@ public class Player2 : MonoBehaviour
     Vector2 dashDirection = new Vector2();
     float dashTime = 0.175f;
     float dashTimer;
+    bool verticalDash;
 
     [Header("Afterimage")]
     public GameObject afterImage;
@@ -92,17 +90,17 @@ public class Player2 : MonoBehaviour
 
     [Header("Coyote")]
     public bool coyote = false;
-    float coyoteTime = 0.2f;
+    float coyoteTime = 0.25f;
     float coyoteTimer;
 
     [Header("Jump Buffer")]
     public bool jumpBuffer = false;
-    float jBufferTime = 0.15f;
+    float jBufferTime = 0.25f;
     float jBufferTimer = 0;
 
     [Header("Keep Dash Buffer")]
     public bool keepDashBuffer = false;
-    float kdBufferTime = 0.1f;
+    float kdBufferTime = 0.25f;
     float kdBufferTimer = 0;
 
     // Start
@@ -116,8 +114,6 @@ public class Player2 : MonoBehaviour
         pKeyScript = new PlayerKeys();
         myKeys = new MyPlayerKeys(playerKeysIndex);
         pKeyScript.SetPlayerKeys(ref myKeys);
-
-        // Setup AfterImage Objects
     }
 
     // Update
@@ -129,6 +125,7 @@ public class Player2 : MonoBehaviour
         anim.SetBool("Ground", grounded);
 
         #region Coyote
+        // Can jump briefly after leaving the ground
         if (coyote)
         {
             coyoteTimer += Time.fixedDeltaTime;
@@ -139,6 +136,7 @@ public class Player2 : MonoBehaviour
         }
         #endregion
         #region Jump Buffer
+        // Can jump if press the button a bit after touching ground
         if (jumpBuffer)
         {
             jBufferTimer += Time.fixedDeltaTime;
@@ -149,6 +147,7 @@ public class Player2 : MonoBehaviour
         }
         #endregion
         #region Keep Dash Buffer
+        // Can keep dash speed after jumping even a bit after dash ends
         if (keepDashBuffer)
         {
             kdBufferTimer += Time.fixedDeltaTime;
@@ -207,12 +206,12 @@ public class Player2 : MonoBehaviour
         else
         {
             dir.x = 0;
-            speed = minSpeed;
         }
 
         wall = WallCheck();
         if (wall)
         {
+            // Stop player
             dir.x = 0;
         }
 
@@ -238,22 +237,26 @@ public class Player2 : MonoBehaviour
         {
             sprite.flipX = false;
         }
+        lastXdir = sprite.flipX ? 1 : -1;
 
         #region Jump
-
         if (keyJump)
         {
+            // Just pressed jump, not in the ground yet
             if (!prevJump && !grounded)
             {
                 jumpBuffer = true;
                 jBufferTimer = 0;
             }
 
+            // Jump event
             if ((!prevJump || jumpBuffer) && grounded)
             {
                 jump = true;
+                // Setup max jump height
                 jumpTop = transform.position.y + jumpHeight;
 
+                // If was on a dash, keep the horizontal speed
                 if (dash)
                 {
                     dash = false;
@@ -262,41 +265,59 @@ public class Player2 : MonoBehaviour
                 jumpBuffer = false;
             }
         }
-
-        // Detect Jump
-        if ((!prevJump || jumpBuffer) && keyJump && grounded)
-        {
-            
-        }
         // Jumping
         if (jump)
         {
+            // Go up
             rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
 
+            // Reached the max jump height
             if (transform.position.y >= jumpTop)
             {
                 jump = false;
+                endJump = keyJump;
+                rb.velocity *= new Vector2(1, 0.75f);
             }
 
-            if (!keyJump)
+            // Key is not pressed anymore
+            if (!keyJump || roof)
             {
                 jump = false;
+                rb.velocity *= new Vector2(1, 0.5f);
+            }
+        }
+        // Jump reached max height, if key is pressed, lower gravity
+        if (endJump)
+        {
+            if (!keyJump)
+            {
+                endJump = false;
             }
         }
         #endregion
 
         #region Dash
-        // Detect Dash
-        if (!prevDash && keyDash && canDash)
+        // Dash Event
+        if (!prevDash && keyDash && canDash && !dash)
         {
             dash = true;
             canDash = false;
+            verticalDash = false;
             dashTimer = 0;
             dashDirection = dir;
+
+            // Dash horizontally if not input dir
             if (dir.x == 0 && dir.y == 0)
             {
                 dashDirection.x = sprite.flipX ? 1 : -1;
             }
+            // Dash was vertical
+            else if (dir.x == 0 && dir.y != 0)
+            {
+                verticalDash = true;
+            }
+
+            jump = false;
         }
         // Dashing
         if (dash)
@@ -307,45 +328,34 @@ public class Player2 : MonoBehaviour
             if (dashTimer >= dashTime)
             {
                 dash = false;
-            }
-            
-            if (!keyDash)
-            {
-                dash = false;
+
+                if (!grounded)
+                {
+                    keepDashSpeed = true;
+                }
             }
         }
         #endregion
         // Normal Movement
         else
         {
-            if (dir.x != 0)
-            {
-                /*if (speed < maxSpeed)
-                {
-                    speed += acceleration;
-                }
-                else if (speed > maxSpeed)
-                {
-                    speed = maxSpeed;
-                }*/
-                speed = maxSpeed;
+            float s = keepDashSpeed ? dashSpeed : speed;
+            float d = keepDashSpeed && !grounded && !verticalDash ? lastXdir : dir.x;
 
-                if (keepDashSpeed)
-                {
-                    speed = dashSpeed;
-                }
+            rb.velocity = new Vector2(s * d, rb.velocity.y);
+        }
+
+        // Apply gravity
+        if (!grounded && !jump && !dash)
+        {
+            if (endJump)
+            {
+                rb.velocity -= new Vector2(0, gravity/2);
             }
             else
             {
-                speed = minSpeed;
+                rb.velocity -= new Vector2(0, gravity);
             }
-
-            rb.velocity = new Vector2(speed * dir.x, rb.velocity.y);
-        }
-
-        if (!grounded && !jump && !dash)
-        {
-            rb.velocity -= new Vector2(0, gravity);
         }
 
         #region Afterimage
@@ -381,16 +391,15 @@ public class Player2 : MonoBehaviour
         if (ground)
         {
             canDash = true;
-            keepDashSpeed = false;
+            endJump = false;
 
             // Just touched the ground
             if (!prevGround)
             {
-
-            }
-            else
-            {
-
+                if (!jump)
+                {
+                    keepDashSpeed = false;
+                }
             }
         }
         else
@@ -411,14 +420,14 @@ public class Player2 : MonoBehaviour
     private bool WallCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.right*dir.x, 0, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(0.5f, 1), 0, Vector2.right*dir.x, box.size.x/2, groundCollisionLayer);
         return (r.collider != null && r.normal.x != dir.x && r.normal.x != 0);
     }
 
     private bool RoofCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.up, 0, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(1, 0.5f), 0, Vector2.up, box.size.y/2, groundCollisionLayer);
 
         return r.collider != null;
     }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class FadeOut : MonoBehaviour
 {
-    public float timeToFade = 10;
+    public float timeToFade = 0.125f;
 
     float fadeRate;
 
