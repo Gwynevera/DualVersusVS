@@ -373,6 +373,10 @@ public class Player2 : MonoBehaviour
                 SpriteRenderer s = a.GetComponent<SpriteRenderer>();
                 s.sprite = sprite.sprite;
                 s.sortingOrder = -1;
+                if (dash)
+                {
+                    s.color = Color.red;
+                }
             }
         }
         #endregion
