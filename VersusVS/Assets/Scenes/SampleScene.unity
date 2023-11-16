@@ -367,6 +367,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 72671939285683359, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: m_SpriteTilingProperty.oldSize.x
+      value: 2.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 72671939285683359, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: m_SpriteTilingProperty.oldSize.y
+      value: 2.8
+      objectReference: {fileID: 0}
     - target: {fileID: 489657394524466181, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -405,6 +413,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 489657394524466181, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1734275010034791650, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1734275010034791650, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: afterImage
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1734275010034791650, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: groundCollisionLayer.m_Bits
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4315090773650565494, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}

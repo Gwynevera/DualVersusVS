@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 489657394524466181}
-  - component: {fileID: 1734275010034791650}
   - component: {fileID: 72671939285683359}
   - component: {fileID: 8452710764873561863}
   - component: {fileID: 1229234528339808000}
@@ -37,45 +36,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1734275010034791650
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4552636734402091311}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: da4cf020789998945ba61cf3c64641c5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerKeysIndex: 0
-  keyLeft: 0
-  keyRight: 0
-  keyDown: 0
-  keyUp: 0
-  keyJump: 0
-  keyDash: 0
-  keyShoot: 0
-  releasedJump: 0
-  releasedDash: 0
-  dir: {x: 1, y: 0}
-  grounded: 0
-  wall: 0
-  roof: 0
-  groundCollisionLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  jumpUp: 0
-  jumpEnd: 0
-  groundDash: 0
-  airDash: 0
-  canAirDash: 0
-  keepDashSpeed: 0
-  afterImage: {fileID: 7281531033563323186, guid: 97180c704576edd4e96115ab6d9489dd, type: 3}
-  coyote: 0
-  jumpBuffer: 0
-  keepDashBuffer: 0
 --- !u!61 &72671939285683359
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -108,18 +68,18 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0, y: 0.05}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 2, y: 2}
+    oldSize: {x: 2.8, y: 2.8}
     newSize: {x: 0.2, y: 0.2}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1, y: 2}
+  m_Size: {x: 0.6, y: 1.5}
   m_EdgeRadius: 0
 --- !u!212 &8452710764873561863
 SpriteRenderer:
@@ -162,7 +122,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: d3dd54a9058641f49b98c9b356c4fe1d, type: 3}
+  m_Sprite: {fileID: -2037666393, guid: 91622ffd293c8b54097c0aecd4558b10, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -244,13 +204,15 @@ MonoBehaviour:
   prevJump: 0
   prevDash: 0
   dir: {x: 0, y: 0}
-  speed: 0
   grounded: 0
   wall: 0
   roof: 0
   groundCollisionLayer:
     serializedVersion: 2
     m_Bits: 128
+  jump: 0
+  endJump: 0
+  keepDashSpeed: 0
   dash: 0
   afterImage: {fileID: 7281531033563323186, guid: 97180c704576edd4e96115ab6d9489dd, type: 3}
   coyote: 0

@@ -381,6 +381,9 @@ public class Player2 : MonoBehaviour
         }
         #endregion
 
+        anim.SetBool("Jump", jump);
+        anim.SetBool("Ground", grounded);
+        anim.SetBool("Run", dir.x != 0);
     }
 
     private bool GroundCheck()
@@ -394,7 +397,10 @@ public class Player2 : MonoBehaviour
         
         if (ground)
         {
-            canDash = true;
+            if (!dash)
+            {
+                canDash = true;
+            }
             endJump = false;
 
             // Just touched the ground
