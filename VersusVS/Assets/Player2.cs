@@ -103,6 +103,11 @@ public class Player2 : MonoBehaviour
     float kdBufferTime = 0.25f;
     float kdBufferTimer = 0;
 
+    [Header("Vulnerable state")]
+    public bool vulnerableState = false;
+    public float vulnerableStateTime = 1.0f;
+    public float pushForce = 10.0f;
+
     // Start
     void Start()
     {
@@ -339,10 +344,13 @@ public class Player2 : MonoBehaviour
         // Normal Movement
         else
         {
-            float s = keepDashSpeed ? dashSpeed : speed;
-            float d = keepDashSpeed && !grounded && !verticalDash ? lastXdir : dir.x;
+            if (!vulnerableState) { 
 
-            rb.velocity = new Vector2(s * d, rb.velocity.y);
+                float s = keepDashSpeed ? dashSpeed : speed;
+                float d = keepDashSpeed && !grounded && !verticalDash ? lastXdir : dir.x;
+
+                rb.velocity = new Vector2(s * d, rb.velocity.y);
+            }
         }
 
         // Apply gravity
@@ -441,4 +449,37 @@ public class Player2 : MonoBehaviour
 
         return r.collider != null;
     }
+
+    private void LaunchCharacter(Vector2 dir, float force)
+    {
+        rb.isKinematic = false;
+        rb.AddForce(dir * force);
+    }
+
+    IEnumerator vulnerableStateCD()
+    {
+        yield return new WaitForSecondsRealtime(vulnerableStateTime);
+        rb.isKinematic = false;
+        vulnerableState = false;
+    }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        
+        if (collision.gameObject.tag == "Player")
+        {
+            Player2 controller = collision.gameObject.GetComponent<Player2>();
+
+            if (!vulnerableState && controller.dash){
+                vulnerableState = true;
+                rb.velocity = Vector2.zero;
+                rb.isKinematic = true;
+                StartCoroutine(vulnerableStateCD());
+            }
+            else if (vulnerableState && controller.dash)
+            {
+                LaunchCharacter(controller.dir, pushForce);
+            }
+        }
+    }
+   
 }
