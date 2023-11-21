@@ -11,7 +11,8 @@ public class PlayerKeys
     KeyCode downP1keyboard = KeyCode.S;
     KeyCode jumpP1keyboard = KeyCode.Space; // J
     KeyCode dashP1keyboard = KeyCode.LeftShift;
-    KeyCode attackP1keyboard = KeyCode.H;
+    KeyCode attackP1keyboard = KeyCode.J;
+    KeyCode parryP1keyboard = KeyCode.K;
 
     // Player 2 - Keyboard
     KeyCode leftP2keyboard = KeyCode.LeftArrow;
@@ -21,16 +22,19 @@ public class PlayerKeys
     KeyCode jumpP2keyboard = KeyCode.Keypad5;
     KeyCode dashP2keyboard = KeyCode.RightControl;
     KeyCode attackP2keyboard = KeyCode.Keypad4;
+    KeyCode parryP2keyboard = KeyCode.Keypad5;
 
     // Player 1 - Gamepad
     KeyCode jumpP1gamepad = KeyCode.Joystick1Button0;   // X (Ekis)
     KeyCode dashP1gamepad = KeyCode.Joystick1Button4;   // L1
     KeyCode attackP1gamepad = KeyCode.Joystick1Button2; // Cuadrao
+    KeyCode parryP1gamepad = KeyCode.Joystick1Button5;  // R1
 
     // Player 2 - Gamepad
     KeyCode jumpP2gamepad = KeyCode.Joystick2Button0;
     KeyCode dashP2gamepad = KeyCode.Joystick2Button4;
     KeyCode attackP2gamepad = KeyCode.Joystick2Button2;
+    KeyCode parryP2gamepad = KeyCode.Joystick2Button5;  // R1
 
     // Axis names
     public string g1PadX = "DPad1_X";
@@ -76,7 +80,7 @@ public class PlayerKeys
         None
     }
 
-    public void SetPlayerKeys(ref Player2.MyPlayerKeys _p)
+    public void SetPlayerKeys(ref Player.MyPlayerKeys _p)
     {
         switch (_p.playerKeys)
         {
@@ -89,6 +93,7 @@ public class PlayerKeys
                 _p.jumpKey = jumpP1keyboard;
                 _p.dashkey = dashP1keyboard;
                 _p.attackKey = attackP1keyboard;
+                _p.parryKey = parryP1keyboard;
                 break;
             case PlayerKeysType.Player2_Keyboard:
                 _p.rightKey = rightP2keyboard;
@@ -99,20 +104,19 @@ public class PlayerKeys
                 _p.jumpKey = jumpP2keyboard;
                 _p.dashkey = dashP2keyboard;
                 _p.attackKey = attackP2keyboard;
+                _p.parryKey = parryP2keyboard;
                 break;
             case PlayerKeysType.Player1_Gamepad:
-                // Axis
-
                 _p.jumpKey = jumpP1gamepad;
                 _p.dashkey = dashP1gamepad;
                 _p.attackKey = attackP1gamepad;
+                _p.parryKey = parryP1gamepad;
                 break;
             case PlayerKeysType.Player2_Gamepad:
-                // Axis
-
                 _p.jumpKey = jumpP2gamepad;
                 _p.dashkey = dashP2gamepad;
                 _p.attackKey = attackP2gamepad;
+                _p.parryKey = parryP2gamepad;
                 break;
         }
     }

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Player2 : MonoBehaviour
+public class Player : MonoBehaviour
 {
     public class MyPlayerKeys
     {
@@ -16,6 +16,7 @@ public class Player2 : MonoBehaviour
         public KeyCode jumpKey;
         public KeyCode dashkey;
         public KeyCode attackKey;
+        public KeyCode parryKey;
 
         public MyPlayerKeys()
         {
@@ -38,10 +39,12 @@ public class Player2 : MonoBehaviour
     public bool keyUp;
     public bool keyJump;
     public bool keyDash;
-    public bool keyShoot;
+    public bool keyAttack;
+    public bool keyParry;
 
     public bool prevJump;
     public bool prevDash;
+    public bool prevParry;
 
     Rigidbody2D rb;
     BoxCollider2D box;
@@ -81,6 +84,15 @@ public class Player2 : MonoBehaviour
     float dashTime = 0.175f;
     float dashTimer;
     bool verticalDash;
+
+    [Header("Parry")]
+    public GameObject parryObj;
+    public bool parry;
+    float parryTime = 0.25f;
+    float parryTimer;
+    public bool afterParry;
+    float aParryTime = 0.5f;
+    float aParryTimer;
 
     [Header("Afterimage")]
     public GameObject afterImage;
@@ -161,6 +173,7 @@ public class Player2 : MonoBehaviour
         #region Inputs
         prevDash = keyDash;
         prevJump = keyJump;
+        prevParry = keyParry;
 
         if (myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player1_Keyboard || 
             myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player2_Keyboard)
@@ -192,6 +205,7 @@ public class Player2 : MonoBehaviour
         }
         keyJump = Input.GetKey(myKeys.jumpKey);
         keyDash = Input.GetKey(myKeys.dashkey);
+        keyParry = Input.GetKey(myKeys.parryKey);
         #endregion
 
         // Left & Right
@@ -239,11 +253,57 @@ public class Player2 : MonoBehaviour
         }
         lastXdir = sprite.flipX ? 1 : -1;
 
+        #region Parry
+        if (keyParry)
+        {
+            if (!prevParry && !parry && !afterParry)
+            {
+                parry = true;
+                parryTimer = 0;
+
+                // Stop everything
+                rb.velocity = Vector2.zero;
+                dash = false;
+                jump = false;
+                endJump = false;
+                keepDashSpeed = false;
+                jumpTop = transform.position.y;
+                dir.x = 0;
+            }
+        }
+
+        sprite.color = Color.white;
+        if (parry)
+        {
+            sprite.color = (Color.red + Color.yellow) / 2;
+
+            parryTimer += Time.fixedDeltaTime;
+            if (parryTimer > parryTime)
+            {
+                parry = false;
+                afterParry = true;
+                aParryTimer = 0;
+            }
+        }
+        parryObj.SetActive(parry);
+
+        if (afterParry)
+        {
+            sprite.color = Color.yellow;
+
+            aParryTimer += Time.fixedDeltaTime;
+            if (aParryTimer > aParryTime)
+            {
+                afterParry = false;
+            }
+        }
+        #endregion
+
         #region Jump
         if (keyJump)
         {
             // Just pressed jump, not in the ground yet
-            if (!prevJump && !grounded)
+            if (!prevJump && !grounded && !parry)
             {
                 jumpBuffer = true;
                 jBufferTimer = 0;
@@ -298,7 +358,7 @@ public class Player2 : MonoBehaviour
 
         #region Dash
         // Dash Event
-        if (!prevDash && keyDash && canDash && !dash)
+        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry)
         {
             dash = true;
             canDash = false;
@@ -342,11 +402,13 @@ public class Player2 : MonoBehaviour
             float s = keepDashSpeed ? dashSpeed : speed;
             float d = keepDashSpeed && !grounded && !verticalDash ? lastXdir : dir.x;
 
+            if (parry) d = 0;
+
             rb.velocity = new Vector2(s * d, rb.velocity.y);
         }
 
         // Apply gravity
-        if (!grounded && !jump && !dash)
+        if (!grounded && !jump && !dash && !parry)
         {
             if (endJump)
             {
@@ -384,6 +446,14 @@ public class Player2 : MonoBehaviour
         anim.SetBool("Jump", jump);
         anim.SetBool("Ground", grounded);
         anim.SetBool("Run", dir.x != 0);
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.tag == "Parry")
+        {
+
+        }
     }
 
     private bool GroundCheck()
