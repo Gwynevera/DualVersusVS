@@ -9,11 +9,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 489657394524466181}
+  - component: {fileID: 229904417521533835}
   - component: {fileID: 72671939285683359}
   - component: {fileID: 8452710764873561863}
   - component: {fileID: 1229234528339808000}
   - component: {fileID: 7665335529616239817}
-  - component: {fileID: 4315090773650565494}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -33,9 +33,52 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1369230481759499746}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &229904417521533835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4552636734402091311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b262dd0d2f92c54681b35aeebcc5c7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerKeysIndex: 2
+  keyLeft: 0
+  keyRight: 0
+  keyDown: 0
+  keyUp: 0
+  keyJump: 0
+  keyDash: 0
+  keyAttack: 0
+  keyParry: 0
+  prevJump: 0
+  prevDash: 0
+  prevParry: 0
+  dir: {x: 0, y: 0}
+  grounded: 0
+  wall: 0
+  roof: 0
+  groundCollisionLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  jump: 0
+  endJump: 0
+  keepDashSpeed: 0
+  dash: 0
+  parryObj: {fileID: 6786391030188414312}
+  parry: 0
+  afterParry: 0
+  afterImage: {fileID: 7281531033563323186, guid: 97180c704576edd4e96115ab6d9489dd, type: 3}
+  coyote: 0
+  jumpBuffer: 0
+  keepDashBuffer: 0
 --- !u!61 &72671939285683359
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -181,40 +224,96 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
---- !u!114 &4315090773650565494
+--- !u!1 &6786391030188414312
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1369230481759499746}
+  - component: {fileID: 4194373763445745571}
+  - component: {fileID: 8994424088032786670}
+  m_Layer: 0
+  m_Name: Parry
+  m_TagString: Parry
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1369230481759499746
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6786391030188414312}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 489657394524466181}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!61 &4194373763445745571
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6786391030188414312}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 1.5, y: 2}
+  m_EdgeRadius: 0
+--- !u!114 &8994424088032786670
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4552636734402091311}
+  m_GameObject: {fileID: 6786391030188414312}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7b262dd0d2f92c54681b35aeebcc5c7d, type: 3}
+  m_Script: {fileID: 11500000, guid: 7c0255f80f8f4a6458d4cb93e05df139, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerKeysIndex: 0
-  keyLeft: 0
-  keyRight: 0
-  keyDown: 0
-  keyUp: 0
-  keyJump: 0
-  keyDash: 0
-  keyShoot: 0
-  prevJump: 0
-  prevDash: 0
-  dir: {x: 0, y: 0}
-  grounded: 0
-  wall: 0
-  roof: 0
-  groundCollisionLayer:
+  parryCollisionLayer:
     serializedVersion: 2
-    m_Bits: 128
-  jump: 0
-  endJump: 0
-  keepDashSpeed: 0
-  dash: 0
-  afterImage: {fileID: 7281531033563323186, guid: 97180c704576edd4e96115ab6d9489dd, type: 3}
-  coyote: 0
-  jumpBuffer: 0
-  keepDashBuffer: 0
+    m_Bits: 0

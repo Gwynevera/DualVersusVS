@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEditor.Experimental.GraphView.GraphView;
 
-public class Player2 : MonoBehaviour
+public class Player : MonoBehaviour
 {
     public class MyPlayerKeys
     {
@@ -16,6 +17,7 @@ public class Player2 : MonoBehaviour
         public KeyCode jumpKey;
         public KeyCode dashkey;
         public KeyCode attackKey;
+        public KeyCode parryKey;
 
         public MyPlayerKeys()
         {
@@ -38,10 +40,12 @@ public class Player2 : MonoBehaviour
     public bool keyUp;
     public bool keyJump;
     public bool keyDash;
-    public bool keyShoot;
+    public bool keyAttack;
+    public bool keyParry;
 
     public bool prevJump;
     public bool prevDash;
+    public bool prevParry;
 
     Rigidbody2D rb;
     BoxCollider2D box;
@@ -78,9 +82,18 @@ public class Player2 : MonoBehaviour
     bool canDash;
     float dashSpeed = 20;
     Vector2 dashDirection = new Vector2();
-    float dashTime = 0.175f;
+    float dashTime = 0.3f;
     float dashTimer;
     bool verticalDash;
+
+    [Header("Parry")]
+    public GameObject parryObj;
+    public bool parry;
+    float parryTime = 0.25f;
+    float parryTimer;
+    public bool afterParry;
+    float aParryTime = 0.5f;
+    float aParryTimer;
 
     [Header("Afterimage")]
     public GameObject afterImage;
@@ -166,6 +179,7 @@ public class Player2 : MonoBehaviour
         #region Inputs
         prevDash = keyDash;
         prevJump = keyJump;
+        prevParry = keyParry;
 
         if (myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player1_Keyboard || 
             myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player2_Keyboard)
@@ -183,20 +197,21 @@ public class Player2 : MonoBehaviour
             {
                 keyRight = Input.GetAxis(pKeyScript.g1PadX) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g1StickX) >= pKeyScript.minStickValue;
                 keyLeft =  Input.GetAxis(pKeyScript.g1PadX) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g1StickX) <= -pKeyScript.minStickValue;
-                keyUp =    Input.GetAxis(pKeyScript.g1PadY) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g1StickY) >= pKeyScript.minStickValue;
-                keyDown =  Input.GetAxis(pKeyScript.g1PadY) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g1StickY) <= -pKeyScript.minStickValue;
+                keyUp =    Input.GetAxis(pKeyScript.g1PadY) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g1StickY) <= -pKeyScript.minStickValue;
+                keyDown =  Input.GetAxis(pKeyScript.g1PadY) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g1StickY) >= pKeyScript.minStickValue;
             }
             // Player 2 - Mando
             else if (myKeys.playerKeys == PlayerKeys.PlayerKeysType.Player2_Gamepad)
             {
                 keyRight = Input.GetAxis(pKeyScript.g2PadX) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g2StickX) >= pKeyScript.minStickValue;
                 keyLeft =  Input.GetAxis(pKeyScript.g2PadX) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g2StickX) <= -pKeyScript.minStickValue;
-                keyUp =    Input.GetAxis(pKeyScript.g2PadY) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g2StickY) >= pKeyScript.minStickValue;
-                keyDown =  Input.GetAxis(pKeyScript.g2PadY) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g2StickY) <= -pKeyScript.minStickValue;
+                keyUp =    Input.GetAxis(pKeyScript.g2PadY) >= pKeyScript.minStickValue  || Input.GetAxis(pKeyScript.g2StickY) <= -pKeyScript.minStickValue;
+                keyDown =  Input.GetAxis(pKeyScript.g2PadY) <= -pKeyScript.minStickValue || Input.GetAxis(pKeyScript.g2StickY) >= pKeyScript.minStickValue;
             }
         }
         keyJump = Input.GetKey(myKeys.jumpKey);
         keyDash = Input.GetKey(myKeys.dashkey);
+        keyParry = Input.GetKey(myKeys.parryKey);
         #endregion
 
         // Left & Right
@@ -244,11 +259,57 @@ public class Player2 : MonoBehaviour
         }
         lastXdir = sprite.flipX ? 1 : -1;
 
+        #region Parry
+        if (keyParry)
+        {
+            if (!prevParry && !parry && !afterParry)
+            {
+                parry = true;
+                parryTimer = 0;
+
+                // Stop everything
+                rb.velocity = Vector2.zero;
+                dash = false;
+                jump = false;
+                endJump = false;
+                keepDashSpeed = false;
+                jumpTop = transform.position.y;
+                dir.x = 0;
+            }
+        }
+
+        sprite.color = Color.white;
+        if (parry)
+        {
+            sprite.color = (Color.red + Color.yellow) / 2;
+
+            parryTimer += Time.fixedDeltaTime;
+            if (parryTimer > parryTime)
+            {
+                parry = false;
+                afterParry = true;
+                aParryTimer = 0;
+            }
+        }
+        parryObj.SetActive(parry);
+
+        if (afterParry)
+        {
+            sprite.color = Color.yellow;
+
+            aParryTimer += Time.fixedDeltaTime;
+            if (aParryTimer > aParryTime)
+            {
+                afterParry = false;
+            }
+        }
+        #endregion
+
         #region Jump
         if (keyJump)
         {
             // Just pressed jump, not in the ground yet
-            if (!prevJump && !grounded)
+            if (!prevJump && !grounded && !parry)
             {
                 jumpBuffer = true;
                 jBufferTimer = 0;
@@ -303,7 +364,7 @@ public class Player2 : MonoBehaviour
 
         #region Dash
         // Dash Event
-        if (!prevDash && keyDash && canDash && !dash)
+        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry)
         {
             dash = true;
             canDash = false;
@@ -345,16 +406,17 @@ public class Player2 : MonoBehaviour
         else
         {
             if (!vulnerableState) { 
-
                 float s = keepDashSpeed ? dashSpeed : speed;
                 float d = keepDashSpeed && !grounded && !verticalDash ? lastXdir : dir.x;
+
+                if (parry) d = 0;
 
                 rb.velocity = new Vector2(s * d, rb.velocity.y);
             }
         }
 
         // Apply gravity
-        if (!grounded && !jump && !dash)
+        if (!grounded && !jump && !dash && !parry && !vulnerableState)
         {
             if (endJump)
             {
@@ -392,6 +454,21 @@ public class Player2 : MonoBehaviour
         anim.SetBool("Jump", jump);
         anim.SetBool("Ground", grounded);
         anim.SetBool("Run", dir.x != 0);
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.tag == "Parry" && dash)
+        {
+            
+            vulnerableState = true;
+            collision.transform.parent.GetComponent<Player>().afterParry = false;
+            collision.transform.parent.GetComponent<Player>().parry = false;
+            EnterVulnerableState(collision.transform.parent.GetComponent<Player>());
+            Vector2 dirTMP = new Vector2(-dir.x, 1);
+            LaunchCharacter(dirTMP, 200);
+
+        }
     }
 
     private bool GroundCheck()
@@ -450,6 +527,7 @@ public class Player2 : MonoBehaviour
         return r.collider != null;
     }
 
+
     private void LaunchCharacter(Vector2 dir, float force)
     {
         rb.isKinematic = false;
@@ -458,28 +536,33 @@ public class Player2 : MonoBehaviour
 
     IEnumerator vulnerableStateCD()
     {
-        yield return new WaitForSecondsRealtime(vulnerableStateTime);
+        yield return new WaitForSeconds(vulnerableStateTime);
         rb.isKinematic = false;
         vulnerableState = false;
+        
+        
     }
+    public void EnterVulnerableState(Player player)
+    {
+        vulnerableState = true;
+        rb.isKinematic = true;
+        rb.velocity = Vector2.zero;
+        dash = false;
+        StartCoroutine(vulnerableStateCD());
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        
-        if (collision.gameObject.tag == "Player")
-        {
-            Player2 controller = collision.gameObject.GetComponent<Player2>();
 
-            if (!vulnerableState && controller.dash){
-                vulnerableState = true;
-                rb.velocity = Vector2.zero;
-                rb.isKinematic = true;
-                StartCoroutine(vulnerableStateCD());
-            }
-            else if (vulnerableState && controller.dash)
+        if (collision.gameObject.tag == "Player") { 
+            Player controller = collision.gameObject.GetComponent<Player>();
+
+            if (vulnerableState && controller.dash && controller.gameObject.tag == "Player")
             {
                 LaunchCharacter(controller.dir, pushForce);
             }
         }
     }
-   
+
+
 }
