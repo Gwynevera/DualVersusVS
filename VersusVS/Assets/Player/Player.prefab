@@ -49,10 +49,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b262dd0d2f92c54681b35aeebcc5c7d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerKeysIndex: 2
+  playerKeysIndex: 0
   keyLeft: 0
   keyRight: 0
-  keyDown: 0
+  keyDown: 1
   keyUp: 0
   keyJump: 0
   keyDash: 0
@@ -79,6 +79,11 @@ MonoBehaviour:
   coyote: 0
   jumpBuffer: 0
   keepDashBuffer: 0
+  vulnerableState: 0
+  vulnerableStateTime: 2
+  parryPushForce: 50
+  pushForce: 25
+  pushCD: 1
 --- !u!61 &72671939285683359
 BoxCollider2D:
   m_ObjectHideFlags: 0

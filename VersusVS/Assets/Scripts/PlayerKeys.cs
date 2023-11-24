@@ -22,7 +22,7 @@ public class PlayerKeys
     KeyCode jumpP2keyboard = KeyCode.Keypad5;
     KeyCode dashP2keyboard = KeyCode.RightControl;
     KeyCode attackP2keyboard = KeyCode.Keypad4;
-    KeyCode parryP2keyboard = KeyCode.Keypad5;
+    KeyCode parryP2keyboard = KeyCode.Keypad6;
 
     // Player 1 - Gamepad
     KeyCode jumpP1gamepad = KeyCode.Joystick1Button0;   // X (Ekis)

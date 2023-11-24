@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using UnityEngine;
 using static UnityEditor.Experimental.GraphView.GraphView;
 
@@ -119,8 +120,10 @@ public class Player : MonoBehaviour
     [Header("Vulnerable state")]
     public bool vulnerableState = false;
     public float vulnerableStateTime = 1.0f;
+    public float parryPushForce = 1500;
     public float pushForce = 10.0f;
-
+    public float pushCD;
+    private IEnumerator corutine;
     // Start
     void Start()
     {
@@ -364,7 +367,7 @@ public class Player : MonoBehaviour
 
         #region Dash
         // Dash Event
-        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry)
+        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry && !vulnerableState)
         {
             dash = true;
             canDash = false;
@@ -465,8 +468,7 @@ public class Player : MonoBehaviour
             collision.transform.parent.GetComponent<Player>().afterParry = false;
             collision.transform.parent.GetComponent<Player>().parry = false;
             EnterVulnerableState(collision.transform.parent.GetComponent<Player>());
-            Vector2 dirTMP = new Vector2(-dir.x, 1);
-            LaunchCharacter(dirTMP, 200);
+            LaunchCharacter(new Vector2(-dir.x, 1), parryPushForce);
 
         }
     }
@@ -542,13 +544,23 @@ public class Player : MonoBehaviour
         
         
     }
+
+    IEnumerator pushCDCorrutine(Player player)
+    {
+
+        yield return new WaitForSeconds(pushCD);
+        vulnerableState = false;
+
+
+    }
     public void EnterVulnerableState(Player player)
     {
         vulnerableState = true;
         rb.isKinematic = true;
         rb.velocity = Vector2.zero;
         dash = false;
-        StartCoroutine(vulnerableStateCD());
+        corutine = vulnerableStateCD();
+        StartCoroutine(corutine);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -556,10 +568,21 @@ public class Player : MonoBehaviour
 
         if (collision.gameObject.tag == "Player") { 
             Player controller = collision.gameObject.GetComponent<Player>();
-
-            if (vulnerableState && controller.dash && controller.gameObject.tag == "Player")
-            {
-                LaunchCharacter(controller.dir, pushForce);
+            if (controller.dash) { 
+                 if (vulnerableState)
+                 {
+                    StopCoroutine(corutine);
+                    corutine = vulnerableStateCD();
+                    StartCoroutine(corutine);
+                    rb.velocity = Vector2.zero;
+                    LaunchCharacter(controller.dir, pushForce);                    
+                 }
+                 else
+                 {
+                    vulnerableState = true;
+                    StartCoroutine (pushCDCorrutine(controller));
+                    LaunchCharacter(new Vector2(controller.dir.x, -1), pushForce);
+                }
             }
         }
     }
