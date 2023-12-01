@@ -58,10 +58,12 @@ public class Player : MonoBehaviour
     int lastXdir;
 
     [Header("Speed")]
-    float speed = 10;
+    float speed = 1;
+    float maxVelocity = 15;
+    float freno = 0.65f;
+    float airFreno = 0.85f;
 
-    [Header("Gravity")]
-    float gravity = 2.25f;
+    float gravity = 5;
 
     [Header("Collisions")]
     public bool grounded = false;
@@ -73,18 +75,20 @@ public class Player : MonoBehaviour
     [Header("Jump")]
     public bool jump;
     public bool endJump;
-    float jumpSpeed = 15;
-    float jumpHeight = 2.25f;
-    float jumpTop;
+    float jumpForce = 15;
     public bool keepDashSpeed;
 
     [Header("Dash")]
     public bool dash;
     bool canDash;
-    float dashSpeed = 20;
+    float dashSpeed = 25;
     Vector2 dashDirection = new Vector2();
-    float dashTime = 0.3f;
+
+    float dTime;
+    float dashTime = 0.15f;
     float dashTimer;
+    float diagonalDashTime = 0.075f;
+
     bool verticalDash;
 
     [Header("Parry")]
@@ -229,6 +233,11 @@ public class Player : MonoBehaviour
         else
         {
             dir.x = 0;
+
+            if (grounded)
+            {
+                rb.velocity *= new Vector2(grounded ? freno : airFreno, 1);
+            }
         }
 
         wall = WallCheck();
@@ -271,12 +280,10 @@ public class Player : MonoBehaviour
                 parryTimer = 0;
 
                 // Stop everything
-                rb.velocity = Vector2.zero;
                 dash = false;
                 jump = false;
                 endJump = false;
                 keepDashSpeed = false;
-                jumpTop = transform.position.y;
                 dir.x = 0;
             }
         }
@@ -285,6 +292,7 @@ public class Player : MonoBehaviour
         if (parry)
         {
             sprite.color = (Color.red + Color.yellow) / 2;
+            rb.velocity *= 0.85f;
 
             parryTimer += Time.fixedDeltaTime;
             if (parryTimer > parryTime)
@@ -322,8 +330,6 @@ public class Player : MonoBehaviour
             if ((!prevJump || jumpBuffer) && grounded)
             {
                 jump = true;
-                // Setup max jump height
-                jumpTop = transform.position.y + jumpHeight;
 
                 // If was on a dash, keep the horizontal speed
                 if (dash)
@@ -337,23 +343,14 @@ public class Player : MonoBehaviour
         // Jumping
         if (jump)
         {
-            // Go up
-            rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
-
-            // Reached the max jump height
-            if (transform.position.y >= jumpTop)
-            {
-                jump = false;
-                endJump = keyJump;
-                rb.velocity *= new Vector2(1, 0.75f);
-            }
+            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            jump = false;
 
             // Key is not pressed anymore
-            if (!keyJump || roof)
+            /*if (!keyJump || roof)
             {
-                jump = false;
-                rb.velocity *= new Vector2(1, 0.5f);
-            }
+                rb.AddForce(Vector2.down * jumpForce / 2, ForceMode2D.Impulse);
+            }*/
         }
         // Jump reached max height, if key is pressed, lower gravity
         if (endJump)
@@ -386,6 +383,12 @@ public class Player : MonoBehaviour
                 verticalDash = true;
             }
 
+            dTime = dashTime;
+            if (dashDirection.x != 0 && dashDirection.y != 0)
+            {
+                dTime = diagonalDashTime;
+            }
+
             jump = false;
         }
         // Dashing
@@ -394,7 +397,7 @@ public class Player : MonoBehaviour
             rb.velocity = dashSpeed * dashDirection;
 
             dashTimer += Time.fixedDeltaTime;
-            if (dashTimer >= dashTime)
+            if (dashTimer >= dTime)
             {
                 dash = false;
 
@@ -408,26 +411,19 @@ public class Player : MonoBehaviour
         // Normal Movement
         else
         {
-            if (!vulnerableState) { 
+            if (!vulnerableState) 
+            { 
                 float s = keepDashSpeed ? dashSpeed : speed;
                 float d = keepDashSpeed && !grounded && !verticalDash ? lastXdir : dir.x;
+                if (dir.x == 1 && rb.velocity.x < 0
+                    || dir.x == -1 && rb.velocity.x > 0)
+                {
+                    s *= 2;
+                }
 
                 if (parry) d = 0;
 
-                rb.velocity = new Vector2(s * d, rb.velocity.y);
-            }
-        }
-
-        // Apply gravity
-        if (!grounded && !jump && !dash && !parry && !vulnerableState)
-        {
-            if (endJump)
-            {
-                rb.velocity -= new Vector2(0, gravity/2);
-            }
-            else
-            {
-                rb.velocity -= new Vector2(0, gravity);
+                rb.AddForce(s * new Vector2(d, 0), ForceMode2D.Impulse);
             }
         }
 
@@ -454,6 +450,16 @@ public class Player : MonoBehaviour
         }
         #endregion
 
+        rb.gravityScale = grounded || dash ? 0 : gravity;
+
+        if (!dash)
+        {
+            if (Mathf.Abs(rb.velocity.x) > maxVelocity)
+            {
+                rb.velocity = new Vector2(dir.x*maxVelocity, rb.velocity.y);
+            }
+        }
+
         anim.SetBool("Jump", jump);
         anim.SetBool("Ground", grounded);
         anim.SetBool("Run", dir.x != 0);
@@ -478,7 +484,7 @@ public class Player : MonoBehaviour
         bool prevGround = grounded;
 
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(1, 0.5f), 0, Vector2.down, box.size.y/2, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(1, 0.5f), 0, Vector2.down, box.size.y/3.25f, groundCollisionLayer);
 
         bool ground = (r.collider != null && r.collider.tag == "Ground" && r.normal.y > 0);
         
@@ -517,14 +523,14 @@ public class Player : MonoBehaviour
     private bool WallCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(0.5f, 1), 0, Vector2.right*dir.x, box.size.x/2, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.right*dir.x, box.size.x, groundCollisionLayer);
         return (r.collider != null && r.normal.x != dir.x && r.normal.x != 0);
     }
 
     private bool RoofCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(1, 0.5f), 0, Vector2.up, box.size.y/2, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.up, box.size.y, groundCollisionLayer);
 
         return r.collider != null;
     }
