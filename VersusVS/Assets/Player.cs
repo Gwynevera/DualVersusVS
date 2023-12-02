@@ -59,7 +59,7 @@ public class Player : MonoBehaviour
 
     [Header("Speed")]
     float speed = 1;
-    float maxVelocity = 15;
+    float maxSpeed = 10;
     float freno = 0.65f;
     float airFreno = 0.85f;
 
@@ -74,22 +74,17 @@ public class Player : MonoBehaviour
 
     [Header("Jump")]
     public bool jump;
-    public bool endJump;
     float jumpForce = 15;
     public bool keepDashSpeed;
 
     [Header("Dash")]
+    public GameObject dashObj;
     public bool dash;
     bool canDash;
     float dashSpeed = 25;
     Vector2 dashDirection = new Vector2();
-
-    float dTime;
-    float dashTime = 0.15f;
+    float dashTime = 0.2f;
     float dashTimer;
-    float diagonalDashTime = 0.075f;
-
-    bool verticalDash;
 
     [Header("Parry")]
     public GameObject parryObj;
@@ -99,6 +94,7 @@ public class Player : MonoBehaviour
     public bool afterParry;
     float aParryTime = 0.5f;
     float aParryTimer;
+    public bool parried;
 
     [Header("Afterimage")]
     public GameObject afterImage;
@@ -122,12 +118,9 @@ public class Player : MonoBehaviour
     float kdBufferTimer = 0;
 
     [Header("Vulnerable state")]
-    public bool vulnerableState = false;
-    public float vulnerableStateTime = 1.0f;
-    public float parryPushForce = 1500;
-    public float pushForce = 10.0f;
-    public float pushCD;
-    private IEnumerator corutine;
+    public bool knockback = false;
+    float knockbackTime = 1.0f;
+    float parryPushForce = 50;
     // Start
     void Start()
     {
@@ -233,11 +226,6 @@ public class Player : MonoBehaviour
         else
         {
             dir.x = 0;
-
-            if (grounded)
-            {
-                rb.velocity *= new Vector2(grounded ? freno : airFreno, 1);
-            }
         }
 
         wall = WallCheck();
@@ -269,6 +257,13 @@ public class Player : MonoBehaviour
         {
             sprite.flipX = false;
         }
+        else
+        {
+            if (!keepDashSpeed && !knockback)
+            {
+                rb.velocity *= new Vector2(grounded ? freno : airFreno, 1);
+            }
+        }
         lastXdir = sprite.flipX ? 1 : -1;
 
         #region Parry
@@ -282,7 +277,6 @@ public class Player : MonoBehaviour
                 // Stop everything
                 dash = false;
                 jump = false;
-                endJump = false;
                 keepDashSpeed = false;
                 dir.x = 0;
             }
@@ -332,9 +326,10 @@ public class Player : MonoBehaviour
                 jump = true;
 
                 // If was on a dash, keep the horizontal speed
-                if (dash)
+                if (dash || keepDashBuffer)
                 {
                     dash = false;
+                    keepDashBuffer = false;
                     keepDashSpeed = true;
                 }
                 jumpBuffer = false;
@@ -345,30 +340,15 @@ public class Player : MonoBehaviour
         {
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             jump = false;
-
-            // Key is not pressed anymore
-            /*if (!keyJump || roof)
-            {
-                rb.AddForce(Vector2.down * jumpForce / 2, ForceMode2D.Impulse);
-            }*/
-        }
-        // Jump reached max height, if key is pressed, lower gravity
-        if (endJump)
-        {
-            if (!keyJump)
-            {
-                endJump = false;
-            }
         }
         #endregion
 
         #region Dash
         // Dash Event
-        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry && !vulnerableState)
+        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry && !knockback)
         {
             dash = true;
             canDash = false;
-            verticalDash = false;
             dashTimer = 0;
             dashDirection = dir;
 
@@ -377,54 +357,47 @@ public class Player : MonoBehaviour
             {
                 dashDirection.x = sprite.flipX ? 1 : -1;
             }
-            // Dash was vertical
-            else if (dir.x == 0 && dir.y != 0)
-            {
-                verticalDash = true;
-            }
 
-            dTime = dashTime;
             if (dashDirection.x != 0 && dashDirection.y != 0)
             {
-                dTime = diagonalDashTime;
+                dashDirection = dashDirection.normalized;
             }
 
             jump = false;
         }
+
         // Dashing
         if (dash)
         {
             rb.velocity = dashSpeed * dashDirection;
 
             dashTimer += Time.fixedDeltaTime;
-            if (dashTimer >= dTime)
+            if (dashTimer >= dashTime)
             {
                 dash = false;
+                rb.velocity *= 0.25f;
 
                 if (!grounded)
                 {
                     keepDashSpeed = true;
                 }
             }
+
+            sprite.color = Color.red;
         }
+        dashObj.SetActive(dash);
         #endregion
+
         // Normal Movement
-        else
+        if (!dash && !knockback)
         {
-            if (!vulnerableState) 
-            { 
-                float s = keepDashSpeed ? dashSpeed : speed;
-                float d = keepDashSpeed && !grounded && !verticalDash ? lastXdir : dir.x;
-                if (dir.x == 1 && rb.velocity.x < 0
-                    || dir.x == -1 && rb.velocity.x > 0)
-                {
-                    s *= 2;
-                }
-
-                if (parry) d = 0;
-
-                rb.AddForce(s * new Vector2(d, 0), ForceMode2D.Impulse);
+            int compensate = 1;
+            if (dir.x == 1 && rb.velocity.x < 0
+                || dir.x == -1 && rb.velocity.x > 0)
+            {
+                compensate = 3;
             }
+            rb.AddForce(speed * compensate * new Vector2(dir.x, 0), ForceMode2D.Impulse);
         }
 
         #region Afterimage
@@ -450,13 +423,14 @@ public class Player : MonoBehaviour
         }
         #endregion
 
-        rb.gravityScale = grounded || dash ? 0 : gravity;
+        rb.gravityScale = grounded || dash || knockback ? 0 : gravity;
 
+        // Turn plus speed
         if (!dash)
         {
-            if (Mathf.Abs(rb.velocity.x) > maxVelocity)
+            if (Mathf.Abs(rb.velocity.x) > maxSpeed)
             {
-                rb.velocity = new Vector2(dir.x*maxVelocity, rb.velocity.y);
+                rb.velocity = new Vector2(dir.x*maxSpeed, rb.velocity.y);
             }
         }
 
@@ -467,15 +441,59 @@ public class Player : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.tag == "Parry" && dash)
-        {
-            
-            vulnerableState = true;
-            collision.transform.parent.GetComponent<Player>().afterParry = false;
-            collision.transform.parent.GetComponent<Player>().parry = false;
-            EnterVulnerableState(collision.transform.parent.GetComponent<Player>());
-            LaunchCharacter(new Vector2(-dir.x, 1), parryPushForce);
+        Player other = collision.gameObject.GetComponentInParent<Player>();
 
+        if (collision.isTrigger)
+        {
+            if (other != null)
+            {
+                // Te hacen Parry
+                if (collision.tag == "Parry")
+                {
+                    if (dash)
+                    {
+                        dash = false;
+                        jump = false;
+                        knockback = true;
+                        parried = true;
+
+                        other.parry = false;
+                        other.afterParry = false;
+                        other.canDash = true;
+                    }
+                }
+
+                // Te golpea un Dash
+                if (collision.tag == "Dash")
+                {
+                    dash = false;
+                    jump = false;
+                    knockback = true;
+                    rb.AddForce(other.dashDirection * parryPushForce, ForceMode2D.Impulse);
+                    StartCoroutine(StopKnockBack());
+
+                    other.dash = false;
+                    other.canDash = true;
+                    other.rb.velocity = Vector2.zero;
+                }
+            }
+        }
+        else
+        {
+            if (other != null)
+            {
+                if (collision.tag == "Player")
+                {
+                    /*if (dash)
+                    {
+                        rb.velocity = Vector2.zero;
+                        canDash = true;
+
+                        other.parried = false;
+                        other.knockback = false;
+                    }*/
+                }
+            }
         }
     }
 
@@ -494,7 +512,6 @@ public class Player : MonoBehaviour
             {
                 canDash = true;
             }
-            endJump = false;
 
             // Just touched the ground
             if (!prevGround)
@@ -535,62 +552,11 @@ public class Player : MonoBehaviour
         return r.collider != null;
     }
 
-
-    private void LaunchCharacter(Vector2 dir, float force)
+    IEnumerator StopKnockBack()
     {
-        rb.isKinematic = false;
-        rb.AddForce(dir * force);
-    }
-
-    IEnumerator vulnerableStateCD()
-    {
-        yield return new WaitForSeconds(vulnerableStateTime);
-        rb.isKinematic = false;
-        vulnerableState = false;
-        
-        
-    }
-
-    IEnumerator pushCDCorrutine(Player player)
-    {
-
-        yield return new WaitForSeconds(pushCD);
-        vulnerableState = false;
-
-
-    }
-    public void EnterVulnerableState(Player player)
-    {
-        vulnerableState = true;
-        rb.isKinematic = true;
-        rb.velocity = Vector2.zero;
-        dash = false;
-        corutine = vulnerableStateCD();
-        StartCoroutine(corutine);
-    }
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-
-        if (collision.gameObject.tag == "Player") { 
-            Player controller = collision.gameObject.GetComponent<Player>();
-            if (controller.dash) { 
-                 if (vulnerableState)
-                 {
-                    StopCoroutine(corutine);
-                    corutine = vulnerableStateCD();
-                    StartCoroutine(corutine);
-                    rb.velocity = Vector2.zero;
-                    LaunchCharacter(controller.dir, pushForce);                    
-                 }
-                 else
-                 {
-                    vulnerableState = true;
-                    StartCoroutine (pushCDCorrutine(controller));
-                    LaunchCharacter(new Vector2(controller.dir.x, -1), pushForce);
-                }
-            }
-        }
+        yield return new WaitForSeconds(knockbackTime);
+        knockback = false;
+        parried = false;
     }
 
 
