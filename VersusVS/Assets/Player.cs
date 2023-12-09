@@ -119,7 +119,7 @@ public class Player : MonoBehaviour
 
     [Header("Vulnerable state")]
     public bool knockback = false;
-    float knockbackTime = 1.0f;
+    float knockbackTime = 0.45f;
     float parryPushForce = 50;
     // Start
     void Start()
@@ -423,10 +423,10 @@ public class Player : MonoBehaviour
         }
         #endregion
 
-        rb.gravityScale = grounded || dash || knockback ? 0 : gravity;
+        rb.gravityScale = grounded || dash /*|| knockback*/ ? 0 : gravity;
 
         // Turn plus speed
-        if (!dash)
+        if (!dash && !knockback)
         {
             if (Mathf.Abs(rb.velocity.x) > maxSpeed)
             {
@@ -466,6 +466,8 @@ public class Player : MonoBehaviour
                 // Te golpea un Dash
                 if (collision.tag == "Dash")
                 {
+                    Debug.Log(this.name + " Hit by Dash " + other.dashDirection);
+
                     dash = false;
                     jump = false;
                     knockback = true;
@@ -558,6 +560,4 @@ public class Player : MonoBehaviour
         knockback = false;
         parried = false;
     }
-
-
 }
