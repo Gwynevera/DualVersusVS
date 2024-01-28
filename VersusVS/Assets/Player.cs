@@ -76,6 +76,8 @@ public class Player : MonoBehaviour
 
     [Header("Jump")]
     public bool jump;
+    public bool doubleJump;
+    public bool canDoubleJump;
     float jumpForce = 15;
     public bool keepDashSpeed;
 
@@ -125,10 +127,10 @@ public class Player : MonoBehaviour
     [Header("Vulnerable state")]
     public bool knockback = false;
     float knockbackTime = 0.45f;
-    float smallKnockBackTime = 0.25f;
+    float smallKnockBackTime = 0.1f;
     float bigKnockBackTime = 0.8f;
-    float dashPushForce = 30;
-    float clashPushForce = 15;
+    float dashPushForce = 20;
+    float clashPushForce = 10;
 
     // Start
     void Start()
@@ -333,9 +335,15 @@ public class Player : MonoBehaviour
             }
 
             // Jump event
-            if ((!prevJump || jumpBuffer) && grounded)
+            if ((!prevJump || jumpBuffer) && (grounded || canDoubleJump))
             {
                 jump = true;
+                if (!grounded && canDoubleJump)
+                {
+                    jump = false;
+                    doubleJump = true;
+                    canDoubleJump = false;
+                }
 
                 // If was on a dash, keep the horizontal speed
                 if (dash || keepDashBuffer)
@@ -349,10 +357,12 @@ public class Player : MonoBehaviour
         }
         
         // Jumping
-        if (jump)
+        if (jump || doubleJump)
         {
+            rb.velocity = new Vector2(rb.velocity.x, 0);
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             jump = false;
+            doubleJump = false;
         }
         #endregion
 
@@ -410,6 +420,7 @@ public class Player : MonoBehaviour
             {
                 compensate = turnCompensationPlus;
             }
+
             rb.AddForce(speed * compensate * new Vector2(dir.x, 0), ForceMode2D.Impulse);
         }
 
@@ -440,7 +451,7 @@ public class Player : MonoBehaviour
         rb.gravityScale = grounded || dash ? 0 : gravity;
 
         // Limit speed
-        if (!dash && !knockback)
+        if (!dash /*&& !keepDashSpeed*/ && !knockback)
         {
             if (Mathf.Abs(rb.velocity.x) > maxSpeed)
             {
@@ -468,12 +479,15 @@ public class Player : MonoBehaviour
                     {
                         dash = false;
                         jump = false;
+                        doubleJump = false;
                         knockback = true;
                         parried = true;
 
                         other.parry = false;
                         other.afterParry = false;
                         other.canDash = true;
+                        other.doubleJump = false;
+                        other.canDoubleJump = true;
                     }
                 }
 
@@ -486,12 +500,15 @@ public class Player : MonoBehaviour
 
                     dash = false;
                     jump = false;
+                    doubleJump = false;
                     knockback = true;
                     rb.velocity = Vector2.zero;
 
-                    if (grounded && other.dashDirection.x != 0)
+                    Vector2 dashPushDir = other.dashDirection;
+                    // Downwards vertical dash on grounded opponent
+                    if (grounded && dashPushDir.x != 0)
                     {
-                        other.dashDirection.y *= -1;
+                        dashPushDir.y = 1;
                     }
 
                     if (clash)
@@ -500,15 +517,16 @@ public class Player : MonoBehaviour
 
                         canDash = true;
 
+                        // Push Player in dash opposite direction
                         rb.AddForce(new Vector2(-lastXdir , 1) * clashPushForce, ForceMode2D.Impulse);
                         StartCoroutine(StopSmallKnockBack());
                     }
                     else
                     {
-                        rb.AddForce(other.dashDirection * dashPushForce, ForceMode2D.Impulse);
+                        // Push Player in received dash direction
+                        rb.AddForce(dashPushDir * dashPushForce, ForceMode2D.Impulse);
                         StartCoroutine(StopKnockBack());
                     }
-
 
                     if (!clash)
                     {
@@ -553,6 +571,7 @@ public class Player : MonoBehaviour
             {
                 canDash = true;
             }
+            canDoubleJump = true;
 
             // Just touched the ground
             if (!prevGround)
@@ -599,7 +618,7 @@ public class Player : MonoBehaviour
         knockback = false;
         parried = false;
         clash = false;
-        Debug.Log("ya estoy (N)" + this.name);
+        Debug.Log("Recovered (N) " + this.name);
     }
     IEnumerator StopSmallKnockBack()
     {
@@ -607,6 +626,6 @@ public class Player : MonoBehaviour
         knockback = false;
         parried = false;
         clash = false;
-        Debug.Log("ya estoy (S)" + this.name);
+        Debug.Log("Recovered (S) " + this.name);
     }
 }
