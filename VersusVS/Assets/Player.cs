@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using UnityEngine;
-using static UnityEditor.Experimental.GraphView.GraphView;
 
 public class Player : MonoBehaviour
 {
@@ -64,6 +63,7 @@ public class Player : MonoBehaviour
     float airFreno = 0.85f;
 
     float gravity = 5;
+    float low_gravity = 1;
 
     int turnCompensationPlus = 3;
 
@@ -101,7 +101,7 @@ public class Player : MonoBehaviour
     float aParryTime = 0.5f;
     float aParryTimer;
     public bool parried;
-    float parrySlowMult = 0.85f;
+    float parrySlowMult = 0.75f;
 
     [Header("Afterimage")]
     public GameObject afterImage;
@@ -126,11 +126,17 @@ public class Player : MonoBehaviour
 
     [Header("Vulnerable state")]
     public bool knockback = false;
+
     float knockbackTime = 0.45f;
     float smallKnockBackTime = 0.1f;
     float bigKnockBackTime = 0.8f;
+
+    float upForceParryKnockbackTime = 0.4f;
+
+    float superPushForce = 30;
     float dashPushForce = 20;
     float clashPushForce = 10;
+    float parryPushForce = 7.5f;
 
     // Start
     void Start()
@@ -448,7 +454,18 @@ public class Player : MonoBehaviour
         #endregion
 
         // Gravity
-        rb.gravityScale = grounded || dash ? 0 : gravity;
+        if (grounded || dash)
+        {
+            rb.gravityScale = 0;
+        }
+        else if (parried)
+        {
+            rb.gravityScale = low_gravity;
+        }
+        else
+        {
+            rb.gravityScale = gravity;
+        }
 
         // Limit speed
         if (!dash /*&& !keepDashSpeed*/ && !knockback)
@@ -477,22 +494,27 @@ public class Player : MonoBehaviour
                 {
                     if (dash)
                     {
+                        // Parreado y mini lanzado patras
                         dash = false;
                         jump = false;
                         doubleJump = false;
                         knockback = true;
                         parried = true;
+                        rb.velocity = Vector2.zero;
+                        rb.AddForce(new Vector2(-lastXdir, 1.25f) * parryPushForce, ForceMode2D.Impulse);
+                        StartCoroutine(StopKnockBack());
 
+                        // Recuperar dash y doble salto
                         other.parry = false;
                         other.afterParry = false;
                         other.canDash = true;
-                        other.doubleJump = false;
                         other.canDoubleJump = true;
+                        other.doubleJump = false;
                     }
                 }
 
                 // Te golpea un Dash
-                if (collision.tag == "Dash")
+                if (collision.tag == "Dash" && !parry)
                 {
                     Debug.Log(this.name + " Hit by Dash " + other.dashDirection);
 
@@ -524,8 +546,16 @@ public class Player : MonoBehaviour
                     else
                     {
                         // Push Player in received dash direction
-                        rb.AddForce(dashPushDir * dashPushForce, ForceMode2D.Impulse);
-                        StartCoroutine(StopKnockBack());
+                        if (parried)
+                        {
+                            rb.AddForce(dashPushDir * superPushForce, ForceMode2D.Impulse);
+                            StartCoroutine(StopBigKnockBack());
+                        }
+                        else
+                        {
+                            rb.AddForce(dashPushDir * dashPushForce, ForceMode2D.Impulse);
+                            StartCoroutine(StopKnockBack());
+                        }
                     }
 
                     if (!clash)
@@ -539,7 +569,7 @@ public class Player : MonoBehaviour
         }
         else
         {
-            if (other != null)
+            /*if (other != null)
             {
                 if (collision.tag == "Player")
                 {
@@ -552,7 +582,7 @@ public class Player : MonoBehaviour
                         other.knockback = false;
                     }
                 }
-            }
+            }*/
         }
     }
 
@@ -627,5 +657,19 @@ public class Player : MonoBehaviour
         parried = false;
         clash = false;
         Debug.Log("Recovered (S) " + this.name);
+    }
+    IEnumerator StopBigKnockBack()
+    {
+        yield return new WaitForSeconds(bigKnockBackTime);
+        knockback = false;
+        parried = false;
+        clash = false;
+        Debug.Log("Recovered (B) " + this.name);
+    }
+
+    IEnumerator StopLowGravityAfterParry()
+    {
+        yield return new WaitForSeconds(upForceParryKnockbackTime);
+        
     }
 }
