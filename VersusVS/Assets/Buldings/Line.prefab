@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1015523966407944305}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: LeftEnd
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -43,9 +43,9 @@ GameObject:
   - component: {fileID: 4802428402004030328}
   - component: {fileID: 8903856251452999735}
   - component: {fileID: 7605466070757313762}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Square
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -188,9 +188,9 @@ GameObject:
   - component: {fileID: 2525985930602661381}
   - component: {fileID: 79786456178933160}
   - component: {fileID: 2442624167276842858}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Square
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -331,7 +331,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4709374086494580953}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: RightEnd
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -365,9 +365,9 @@ GameObject:
   - component: {fileID: 6206933280073191642}
   - component: {fileID: 1169094290632349863}
   - component: {fileID: 7196081018527057902}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Square
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -511,9 +511,9 @@ GameObject:
   - component: {fileID: 1626944773587108509}
   - component: {fileID: 8601206461305445683}
   - component: {fileID: 2542553604555561878}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Square
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -694,7 +694,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   leftChunk: {fileID: 1015523966407944305}
   rightChunk: {fileID: 4709374086494580953}
-  endForce: 3000
-  interpolationDuration: 0.5
+  endForce: 1000
+  interpolationDuration: 0.25
   lerping: 0
   rightToLeft: 0

@@ -9,7 +9,7 @@ public class BuildingChunk : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.transform.tag == "Player" && collision.transform.GetComponent<Player>().vulnerableState)
+        if(collision.transform.tag == "Player" && collision.transform.GetComponent<Player>().knockback)
         {
             BuildingLine BL = GetComponentInParent<BuildingLine>();
 

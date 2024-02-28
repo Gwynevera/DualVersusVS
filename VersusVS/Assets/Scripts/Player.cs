@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using UnityEngine;
-using static UnityEditor.Experimental.GraphView.GraphView;
 
 public class Player : MonoBehaviour
 {
@@ -55,13 +54,18 @@ public class Player : MonoBehaviour
 
     [Header("Direction")]
     public Vector2 dir = new Vector2();
-    int lastXdir;
+    public int lastXdir;
 
     [Header("Speed")]
-    float speed = 10;
+    float speed = 1;
+    float maxSpeed = 10;
+    float freno = 0.65f;
+    float airFreno = 0.85f;
 
-    [Header("Gravity")]
-    float gravity = 2.25f;
+    float gravity = 5;
+    float low_gravity = 1;
+
+    int turnCompensationPlus = 3;
 
     [Header("Collisions")]
     public bool grounded = false;
@@ -72,20 +76,21 @@ public class Player : MonoBehaviour
 
     [Header("Jump")]
     public bool jump;
-    public bool endJump;
-    float jumpSpeed = 15;
-    float jumpHeight = 2.25f;
-    float jumpTop;
+    public bool doubleJump;
+    public bool canDoubleJump;
+    float jumpForce = 15;
     public bool keepDashSpeed;
 
     [Header("Dash")]
+    public GameObject dashObj;
     public bool dash;
+    public bool clash;
     bool canDash;
-    float dashSpeed = 20;
+    float dashSpeed = 25;
     Vector2 dashDirection = new Vector2();
-    float dashTime = 0.3f;
+    float dashTime = 0.2f;
     float dashTimer;
-    bool verticalDash;
+    float endDashSlowMult = 0.25f;
 
     [Header("Parry")]
     public GameObject parryObj;
@@ -95,6 +100,8 @@ public class Player : MonoBehaviour
     public bool afterParry;
     float aParryTime = 0.5f;
     float aParryTimer;
+    public bool parried;
+    float parrySlowMult = 0.75f;
 
     [Header("Afterimage")]
     public GameObject afterImage;
@@ -118,12 +125,19 @@ public class Player : MonoBehaviour
     float kdBufferTimer = 0;
 
     [Header("Vulnerable state")]
-    public bool vulnerableState = false;
-    public float vulnerableStateTime = 1.0f;
-    public float parryPushForce = 1500;
-    public float pushForce = 10.0f;
-    public float pushCD;
-    private IEnumerator corutine;
+    public bool knockback = false;
+
+    float knockbackTime = 0.45f;
+    float smallKnockBackTime = 0.1f;
+    float bigKnockBackTime = 0.8f;
+
+    float upForceParryKnockbackTime = 0.4f;
+
+    float superPushForce = 30;
+    float dashPushForce = 20;
+    float clashPushForce = 10;
+    float parryPushForce = 7.5f;
+
     // Start
     void Start()
     {
@@ -251,6 +265,7 @@ public class Player : MonoBehaviour
         {
             dir.y = 0;
         }
+        
         // Sprite flip
         if (dir.x == 1)
         {
@@ -259,6 +274,14 @@ public class Player : MonoBehaviour
         else if (dir.x == -1)
         {
             sprite.flipX = false;
+        }
+        else
+        {
+            // Slow down
+            if (!keepDashSpeed && !knockback)
+            {
+                rb.velocity *= new Vector2(grounded ? freno : airFreno, 1);
+            }
         }
         lastXdir = sprite.flipX ? 1 : -1;
 
@@ -271,20 +294,18 @@ public class Player : MonoBehaviour
                 parryTimer = 0;
 
                 // Stop everything
-                rb.velocity = Vector2.zero;
                 dash = false;
                 jump = false;
-                endJump = false;
                 keepDashSpeed = false;
-                jumpTop = transform.position.y;
                 dir.x = 0;
             }
         }
 
-        sprite.color = Color.white;
+        sprite.color = Color.white; ///
         if (parry)
         {
-            sprite.color = (Color.red + Color.yellow) / 2;
+            sprite.color = (Color.red + Color.yellow) / 2; ///
+            rb.velocity *= parrySlowMult;
 
             parryTimer += Time.fixedDeltaTime;
             if (parryTimer > parryTime)
@@ -294,11 +315,12 @@ public class Player : MonoBehaviour
                 aParryTimer = 0;
             }
         }
+        
         parryObj.SetActive(parry);
 
         if (afterParry)
         {
-            sprite.color = Color.yellow;
+            sprite.color = Color.yellow; ///
 
             aParryTimer += Time.fixedDeltaTime;
             if (aParryTimer > aParryTime)
@@ -319,59 +341,43 @@ public class Player : MonoBehaviour
             }
 
             // Jump event
-            if ((!prevJump || jumpBuffer) && grounded)
+            if ((!prevJump || jumpBuffer) && (grounded || canDoubleJump))
             {
                 jump = true;
-                // Setup max jump height
-                jumpTop = transform.position.y + jumpHeight;
+                if (!grounded && canDoubleJump)
+                {
+                    jump = false;
+                    doubleJump = true;
+                    canDoubleJump = false;
+                }
 
                 // If was on a dash, keep the horizontal speed
-                if (dash)
+                if (dash || keepDashBuffer)
                 {
                     dash = false;
+                    keepDashBuffer = false;
                     keepDashSpeed = true;
                 }
                 jumpBuffer = false;
             }
         }
+        
         // Jumping
-        if (jump)
+        if (jump || doubleJump)
         {
-            // Go up
-            rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
-
-            // Reached the max jump height
-            if (transform.position.y >= jumpTop)
-            {
-                jump = false;
-                endJump = keyJump;
-                rb.velocity *= new Vector2(1, 0.75f);
-            }
-
-            // Key is not pressed anymore
-            if (!keyJump || roof)
-            {
-                jump = false;
-                rb.velocity *= new Vector2(1, 0.5f);
-            }
-        }
-        // Jump reached max height, if key is pressed, lower gravity
-        if (endJump)
-        {
-            if (!keyJump)
-            {
-                endJump = false;
-            }
+            rb.velocity = new Vector2(rb.velocity.x, 0);
+            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            jump = false;
+            doubleJump = false;
         }
         #endregion
 
         #region Dash
         // Dash Event
-        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry && !vulnerableState)
+        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry && !knockback)
         {
             dash = true;
             canDash = false;
-            verticalDash = false;
             dashTimer = 0;
             dashDirection = dir;
 
@@ -380,14 +386,15 @@ public class Player : MonoBehaviour
             {
                 dashDirection.x = sprite.flipX ? 1 : -1;
             }
-            // Dash was vertical
-            else if (dir.x == 0 && dir.y != 0)
+
+            if (dashDirection.x != 0 && dashDirection.y != 0)
             {
-                verticalDash = true;
+                dashDirection = dashDirection.normalized;
             }
 
             jump = false;
         }
+
         // Dashing
         if (dash)
         {
@@ -397,38 +404,30 @@ public class Player : MonoBehaviour
             if (dashTimer >= dashTime)
             {
                 dash = false;
+                rb.velocity *= endDashSlowMult;
 
                 if (!grounded)
                 {
                     keepDashSpeed = true;
                 }
             }
+
+            sprite.color = Color.red;
         }
+        dashObj.SetActive(dash);
         #endregion
+
         // Normal Movement
-        else
+        if (!dash && !knockback)
         {
-            if (!vulnerableState) { 
-                float s = keepDashSpeed ? dashSpeed : speed;
-                float d = keepDashSpeed && !grounded && !verticalDash ? lastXdir : dir.x;
-
-                if (parry) d = 0;
-
-                rb.velocity = new Vector2(s * d, rb.velocity.y);
-            }
-        }
-
-        // Apply gravity
-        if (!grounded && !jump && !dash && !parry && !vulnerableState)
-        {
-            if (endJump)
+            int compensate = 1;
+            if (dir.x == 1 && rb.velocity.x < 0
+                || dir.x == -1 && rb.velocity.x > 0)
             {
-                rb.velocity -= new Vector2(0, gravity/2);
+                compensate = turnCompensationPlus;
             }
-            else
-            {
-                rb.velocity -= new Vector2(0, gravity);
-            }
+
+            rb.AddForce(speed * compensate * new Vector2(dir.x, 0), ForceMode2D.Impulse);
         }
 
         #region Afterimage
@@ -454,6 +453,29 @@ public class Player : MonoBehaviour
         }
         #endregion
 
+        // Gravity
+        if (grounded || dash)
+        {
+            rb.gravityScale = 0;
+        }
+        else if (parried)
+        {
+            rb.gravityScale = low_gravity;
+        }
+        else
+        {
+            rb.gravityScale = gravity;
+        }
+
+        // Limit speed
+        if (!dash /*&& !keepDashSpeed*/ && !knockback)
+        {
+            if (Mathf.Abs(rb.velocity.x) > maxSpeed)
+            {
+                rb.velocity = new Vector2(dir.x*maxSpeed, rb.velocity.y);
+            }
+        }
+
         anim.SetBool("Jump", jump);
         anim.SetBool("Ground", grounded);
         anim.SetBool("Run", dir.x != 0);
@@ -461,15 +483,106 @@ public class Player : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.tag == "Parry" && dash)
-        {
-            
-            vulnerableState = true;
-            collision.transform.parent.GetComponent<Player>().afterParry = false;
-            collision.transform.parent.GetComponent<Player>().parry = false;
-            EnterVulnerableState(collision.transform.parent.GetComponent<Player>());
-            LaunchCharacter(new Vector2(-dir.x, 1), parryPushForce);
+        Player other = collision.gameObject.GetComponentInParent<Player>();
 
+        if (collision.isTrigger)
+        {
+            if (other != null && !knockback)
+            {
+                // Te hacen Parry
+                if (collision.tag == "Parry")
+                {
+                    if (dash)
+                    {
+                        // Parreado y mini lanzado patras
+                        dash = false;
+                        jump = false;
+                        doubleJump = false;
+                        knockback = true;
+                        parried = true;
+                        rb.velocity = Vector2.zero;
+                        rb.AddForce(new Vector2(-lastXdir, 1.25f) * parryPushForce, ForceMode2D.Impulse);
+                        StartCoroutine(StopKnockBack());
+
+                        // Recuperar dash y doble salto
+                        other.parry = false;
+                        other.afterParry = false;
+                        other.canDash = true;
+                        other.canDoubleJump = true;
+                        other.doubleJump = false;
+                    }
+                }
+
+                // Te golpea un Dash
+                if (collision.tag == "Dash" && !parry)
+                {
+                    Debug.Log(this.name + " Hit by Dash " + other.dashDirection);
+
+                    clash = (dash && other.dash) || other.clash;
+
+                    dash = false;
+                    jump = false;
+                    doubleJump = false;
+                    knockback = true;
+                    rb.velocity = Vector2.zero;
+
+                    Vector2 dashPushDir = other.dashDirection;
+                    // Downwards vertical dash on grounded opponent
+                    if (grounded && dashPushDir.x != 0)
+                    {
+                        dashPushDir.y = 1;
+                    }
+
+                    if (clash)
+                    {
+                        Debug.Log(this.name + " CLASH ");
+
+                        canDash = true;
+
+                        // Push Player in dash opposite direction
+                        rb.AddForce(new Vector2(-lastXdir , 1) * clashPushForce, ForceMode2D.Impulse);
+                        StartCoroutine(StopSmallKnockBack());
+                    }
+                    else
+                    {
+                        // Push Player in received dash direction
+                        if (parried)
+                        {
+                            rb.AddForce(dashPushDir * superPushForce, ForceMode2D.Impulse);
+                            StartCoroutine(StopBigKnockBack());
+                        }
+                        else
+                        {
+                            rb.AddForce(dashPushDir * dashPushForce, ForceMode2D.Impulse);
+                            StartCoroutine(StopKnockBack());
+                        }
+                    }
+
+                    if (!clash)
+                    {
+                        other.rb.velocity = Vector2.zero;
+                        other.dash = false;
+                        other.canDash = true;
+                    }
+                }
+            }
+        }
+        else
+        {
+            /*if (other != null)
+            {
+                if (collision.tag == "Player")
+                {
+                    if (dash)
+                    {
+                        rb.velocity = Vector2.zero;
+                        canDash = true;
+
+                        other.parried = false;
+                        other.knockback = false;
+                    }
+                }
+            }*/
         }
     }
 
@@ -478,7 +591,7 @@ public class Player : MonoBehaviour
         bool prevGround = grounded;
 
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(1, 0.5f), 0, Vector2.down, box.size.y/2, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(1, 0.5f), 0, Vector2.down, box.size.y/3.25f, groundCollisionLayer);
 
         bool ground = (r.collider != null && r.collider.tag == "Ground" && r.normal.y > 0);
         
@@ -488,7 +601,7 @@ public class Player : MonoBehaviour
             {
                 canDash = true;
             }
-            endJump = false;
+            canDoubleJump = true;
 
             // Just touched the ground
             if (!prevGround)
@@ -517,75 +630,46 @@ public class Player : MonoBehaviour
     private bool WallCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(0.5f, 1), 0, Vector2.right*dir.x, box.size.x/2, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.right*dir.x, box.size.x, groundCollisionLayer);
         return (r.collider != null && r.normal.x != dir.x && r.normal.x != 0);
     }
 
     private bool RoofCheck()
     {
         RaycastHit2D r;
-        r = Physics2D.BoxCast(box.bounds.center, box.size * new Vector2(1, 0.5f), 0, Vector2.up, box.size.y/2, groundCollisionLayer);
+        r = Physics2D.BoxCast(box.bounds.center, box.size, 0, Vector2.up, box.size.y, groundCollisionLayer);
 
         return r.collider != null;
     }
 
-
-    private void LaunchCharacter(Vector2 dir, float force)
+    IEnumerator StopKnockBack()
     {
-        rb.isKinematic = false;
-        rb.AddForce(dir * force);
+        yield return new WaitForSeconds(knockbackTime);
+        knockback = false;
+        parried = false;
+        clash = false;
+        Debug.Log("Recovered (N) " + this.name);
+    }
+    IEnumerator StopSmallKnockBack()
+    {
+        yield return new WaitForSeconds(smallKnockBackTime);
+        knockback = false;
+        parried = false;
+        clash = false;
+        Debug.Log("Recovered (S) " + this.name);
+    }
+    IEnumerator StopBigKnockBack()
+    {
+        yield return new WaitForSeconds(bigKnockBackTime);
+        knockback = false;
+        parried = false;
+        clash = false;
+        Debug.Log("Recovered (B) " + this.name);
     }
 
-    IEnumerator vulnerableStateCD()
+    IEnumerator StopLowGravityAfterParry()
     {
-        yield return new WaitForSeconds(vulnerableStateTime);
-        rb.isKinematic = false;
-        vulnerableState = false;
+        yield return new WaitForSeconds(upForceParryKnockbackTime);
         
-        
     }
-
-    IEnumerator pushCDCorrutine(Player player)
-    {
-
-        yield return new WaitForSeconds(pushCD);
-        vulnerableState = false;
-
-
-    }
-    public void EnterVulnerableState(Player player)
-    {
-        vulnerableState = true;
-        rb.isKinematic = true;
-        rb.velocity = Vector2.zero;
-        dash = false;
-        corutine = vulnerableStateCD();
-        StartCoroutine(corutine);
-    }
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-
-        if (collision.gameObject.tag == "Player") { 
-            Player controller = collision.gameObject.GetComponent<Player>();
-            if (controller.dash) { 
-                 if (vulnerableState)
-                 {
-                    StopCoroutine(corutine);
-                    corutine = vulnerableStateCD();
-                    StartCoroutine(corutine);
-                    rb.velocity = Vector2.zero;
-                    LaunchCharacter(controller.dir, pushForce);                    
-                 }
-                 else
-                 {
-                    vulnerableState = true;
-                    StartCoroutine (pushCDCorrutine(controller));
-                    LaunchCharacter(new Vector2(controller.dir.x, -1), pushForce);
-                }
-            }
-        }
-    }
-
-
 }

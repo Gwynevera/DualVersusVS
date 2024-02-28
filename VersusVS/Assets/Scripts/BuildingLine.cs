@@ -32,7 +32,7 @@ public class BuildingLine : MonoBehaviour
         if (lerping)
         {
             playerBreakingThrough.GetComponent<Player>().enabled = false;
-            playerBreakingThrough.GetComponent<Player>().vulnerableState = true;
+            playerBreakingThrough.GetComponent<Player>().knockback = true;
 
             elapsedTime += Time.deltaTime;
             percentageComplete = elapsedTime / interpolationDuration;
@@ -73,8 +73,15 @@ public class BuildingLine : MonoBehaviour
         if (rightToLeft) dir = new Vector2(-1, 0);
         else dir = new Vector2(1, 0);
 
-        playerBreakingThrough.GetComponent<Player>().vulnerableState = false;
-        playerBreakingThrough.GetComponent<Rigidbody2D>().AddForce(dir * endForce, ForceMode2D.Impulse);
+        StartCoroutine(knockbakWaiter());
+        playerBreakingThrough.GetComponent<Rigidbody2D>().AddForce(dir * endForce);
 
     }
+
+    public IEnumerator knockbakWaiter()
+    {
+        yield return new WaitForSecondsRealtime(0.5f);
+        playerBreakingThrough.GetComponent<Player>().knockback = false;
+    }
+
 }
