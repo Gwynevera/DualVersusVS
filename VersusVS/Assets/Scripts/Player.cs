@@ -59,8 +59,8 @@ public class Player : MonoBehaviour
     [Header("Speed")]
     float speed = 1;
     float maxSpeed = 10;
-    float freno = 0.65f;
-    float airFreno = 0.85f;
+    float freno = 1; //0.7f;
+    float airFreno = 0.55f;
 
     float gravity = 5;
     float low_gravity = 1;
@@ -78,8 +78,12 @@ public class Player : MonoBehaviour
     public bool jump;
     public bool doubleJump;
     public bool canDoubleJump;
-    float jumpForce = 15;
+    float jumpForce = 16;
+    float lowSlowJumpForce = 8;
+    float topSlowJumpForce = 10;
     public bool keepDashSpeed;
+    public float topJumpPosition;
+    public float jumpHeight = 1;
 
     [Header("Dash")]
     public GameObject dashObj;
@@ -170,6 +174,7 @@ public class Player : MonoBehaviour
             }
         }
         #endregion
+        
         #region Jump Buffer
         // Can jump if press the button a bit after touching ground
         if (jumpBuffer)
@@ -181,6 +186,7 @@ public class Player : MonoBehaviour
             }
         }
         #endregion
+        
         #region Keep Dash Buffer
         // Can keep dash speed after jumping even a bit after dash ends
         if (keepDashBuffer)
@@ -344,6 +350,8 @@ public class Player : MonoBehaviour
             if ((!prevJump || jumpBuffer) && (grounded || canDoubleJump))
             {
                 jump = true;
+                topJumpPosition = transform.position.y + jumpHeight;
+
                 if (!grounded && canDoubleJump)
                 {
                     jump = false;
@@ -361,14 +369,26 @@ public class Player : MonoBehaviour
                 jumpBuffer = false;
             }
         }
+        else
+        {
+            if ((jump || doubleJump) && transform.position.y < topJumpPosition)
+            {
+                rb.AddForce(Vector2.down * lowSlowJumpForce, ForceMode2D.Impulse);
+                jump = doubleJump = false;
+            }
+        }
         
         // Jumping
         if (jump || doubleJump)
         {
-            rb.velocity = new Vector2(rb.velocity.x, 0);
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            jump = false;
-            doubleJump = false;
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            
+            // Reached Top of the Jump
+            if (transform.position.y >= topJumpPosition)
+            {
+                jump = doubleJump = false;
+                rb.AddForce(Vector2.down * topSlowJumpForce, ForceMode2D.Impulse);
+            }
         }
         #endregion
 
@@ -412,7 +432,7 @@ public class Player : MonoBehaviour
                 }
             }
 
-            sprite.color = Color.red;
+            sprite.color = Color.red; ///
         }
         dashObj.SetActive(dash);
         #endregion
@@ -472,7 +492,7 @@ public class Player : MonoBehaviour
         {
             if (Mathf.Abs(rb.velocity.x) > maxSpeed)
             {
-                rb.velocity = new Vector2(dir.x*maxSpeed, rb.velocity.y);
+                rb.velocity = new Vector2(dir.x * maxSpeed, rb.velocity.y);
             }
         }
 
@@ -566,23 +586,6 @@ public class Player : MonoBehaviour
                     }
                 }
             }
-        }
-        else
-        {
-            /*if (other != null)
-            {
-                if (collision.tag == "Player")
-                {
-                    if (dash)
-                    {
-                        rb.velocity = Vector2.zero;
-                        canDash = true;
-
-                        other.parried = false;
-                        other.knockback = false;
-                    }
-                }
-            }*/
         }
     }
 
