@@ -59,11 +59,16 @@ public class Player : MonoBehaviour
     [Header("Speed")]
     float speed = 1;
     float maxSpeed = 10;
-    float freno = 1; //0.7f;
+
+    float freno = 0.7f;
     float airFreno = 0.55f;
+
+    float chargingDashSpeed = 0.65f; //0;
+    float chargingDashMaxSpeed = 6.5f; //0;
 
     float gravity = 5;
     float low_gravity = 1;
+    float chargeDash_gravity = 4;
 
     int turnCompensationPlus = 3;
 
@@ -79,22 +84,26 @@ public class Player : MonoBehaviour
     public bool doubleJump;
     public bool canDoubleJump;
     float jumpForce = 16;
-    float lowSlowJumpForce = 8;
-    float topSlowJumpForce = 10;
+    float lowSlowJumpForce = 10;
+    float topSlowJumpForce = 8.5f;
     public bool keepDashSpeed;
     public float topJumpPosition;
-    public float jumpHeight = 1;
+    float jumpHeight = 2;
 
     [Header("Dash")]
     public GameObject dashObj;
     public bool dash;
     public bool clash;
-    bool canDash;
+    public bool canDash;
     float dashSpeed = 25;
     Vector2 dashDirection = new Vector2();
     float dashTime = 0.2f;
     float dashTimer;
-    float endDashSlowMult = 0.25f;
+    float endDashSlowMult = 0.5f;
+    public bool chargingDash;
+    float chargeDashTime = 2;
+    float chargeDashTimer;
+    float chargeDashSlowMult = 0.5f;
 
     [Header("Parry")]
     public GameObject parryObj;
@@ -173,8 +182,8 @@ public class Player : MonoBehaviour
                 coyote = false;
             }
         }
-        #endregion
-        
+        #endregion Coyote
+
         #region Jump Buffer
         // Can jump if press the button a bit after touching ground
         if (jumpBuffer)
@@ -185,8 +194,8 @@ public class Player : MonoBehaviour
                 jumpBuffer = false;
             }
         }
-        #endregion
-        
+        #endregion Jump Buffer
+
         #region Keep Dash Buffer
         // Can keep dash speed after jumping even a bit after dash ends
         if (keepDashBuffer)
@@ -197,8 +206,8 @@ public class Player : MonoBehaviour
                 keepDashBuffer = false;
             }
         }
-        #endregion
-        
+        #endregion Keep Dash Buffer
+
         #region Inputs
         prevDash = keyDash;
         prevJump = keyJump;
@@ -235,7 +244,7 @@ public class Player : MonoBehaviour
         keyJump = Input.GetKey(myKeys.jumpKey);
         keyDash = Input.GetKey(myKeys.dashkey);
         keyParry = Input.GetKey(myKeys.parryKey);
-        #endregion
+        #endregion Inputs
 
         // Left & Right
         if (keyLeft && !keyRight)
@@ -393,26 +402,42 @@ public class Player : MonoBehaviour
         #endregion
 
         #region Dash
-        // Dash Event
-        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry && !knockback)
+        // Press Dash Key
+        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry && !knockback && !chargingDash)
         {
-            dash = true;
             canDash = false;
             dashTimer = 0;
-            dashDirection = dir;
-
-            // Dash horizontally if not input dir
-            if (dir.x == 0 && dir.y == 0)
-            {
-                dashDirection.x = sprite.flipX ? 1 : -1;
-            }
-
-            if (dashDirection.x != 0 && dashDirection.y != 0)
-            {
-                dashDirection = dashDirection.normalized;
-            }
+            chargeDashTimer = 0;
 
             jump = false;
+
+            chargingDash = true;
+            rb.velocity *= chargeDashSlowMult;
+        }
+        // Release Dash Key
+        else if (/*prevDash &&*/ !keyDash)
+        {
+            // Dash released early
+            if (chargingDash)
+            {
+                Dash();
+            }
+        }
+
+        // Charge Dash
+        if (chargingDash)
+        {
+            chargeDashTimer += Time.fixedDeltaTime;
+            if (chargeDashTimer >= chargeDashTime)
+            {
+                Dash();
+            }
+
+            sprite.color = new Color(1, 1-(chargeDashTimer/2), 1-(chargeDashTimer/2));
+        }
+        else
+        {
+            sprite.color = Color.white;
         }
 
         // Dashing
@@ -421,6 +446,7 @@ public class Player : MonoBehaviour
             rb.velocity = dashSpeed * dashDirection;
 
             dashTimer += Time.fixedDeltaTime;
+            // End Dash
             if (dashTimer >= dashTime)
             {
                 dash = false;
@@ -435,19 +461,21 @@ public class Player : MonoBehaviour
             sprite.color = Color.red; ///
         }
         dashObj.SetActive(dash);
-        #endregion
+        #endregion Dash
 
         // Normal Movement
         if (!dash && !knockback)
         {
-            int compensate = 1;
+            float compensate = 1;
             if (dir.x == 1 && rb.velocity.x < 0
                 || dir.x == -1 && rb.velocity.x > 0)
             {
                 compensate = turnCompensationPlus;
             }
 
-            rb.AddForce(speed * compensate * new Vector2(dir.x, 0), ForceMode2D.Impulse);
+            float finalSpeed = chargingDash ? chargingDashSpeed : speed;
+
+            rb.AddForce(finalSpeed * compensate * new Vector2(dir.x, 0), ForceMode2D.Impulse);
         }
 
         #region Afterimage
@@ -471,7 +499,7 @@ public class Player : MonoBehaviour
                 }
             }
         }
-        #endregion
+        #endregion Afterimage
 
         // Gravity
         if (grounded || dash)
@@ -482,23 +510,49 @@ public class Player : MonoBehaviour
         {
             rb.gravityScale = low_gravity;
         }
+        else if (chargingDash)
+        {
+            rb.gravityScale = chargeDash_gravity;
+        }
         else
         {
             rb.gravityScale = gravity;
         }
 
         // Limit speed
-        if (!dash /*&& !keepDashSpeed*/ && !knockback)
+        if (!dash && !knockback)
         {
-            if (Mathf.Abs(rb.velocity.x) > maxSpeed)
+            float finalMaxSpeed = chargingDash ? chargingDashMaxSpeed : maxSpeed;
+
+            if (Mathf.Abs(rb.velocity.x) > finalMaxSpeed)
             {
-                rb.velocity = new Vector2(dir.x * maxSpeed, rb.velocity.y);
+                rb.velocity = new Vector2(dir.x * finalMaxSpeed, rb.velocity.y);
             }
         }
 
         anim.SetBool("Jump", jump);
         anim.SetBool("Ground", grounded);
         anim.SetBool("Run", dir.x != 0);
+    }
+
+    private void Dash()
+    {
+        chargingDash = false;
+        chargeDashTimer = 0;
+
+        dash = true;
+        dashDirection = dir;
+
+        // Dash horizontally if not input dir
+        if (dir.x == 0 && dir.y == 0)
+        {
+            dashDirection.x = sprite.flipX ? 1 : -1;
+        }
+
+        if (dashDirection.x != 0 && dashDirection.y != 0)
+        {
+            dashDirection = dashDirection.normalized;
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -568,6 +622,9 @@ public class Player : MonoBehaviour
                         // Push Player in received dash direction
                         if (parried)
                         {
+                            chargingDash = false;
+                            chargeDashTimer = 0;
+
                             rb.AddForce(dashPushDir * superPushForce, ForceMode2D.Impulse);
                             StartCoroutine(StopBigKnockBack());
                         }

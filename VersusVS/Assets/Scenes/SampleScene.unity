@@ -425,6 +425,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 229904417521533835, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: jumpHeight
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 229904417521533835, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
       propertyPath: playerKeysIndex
       value: 2
       objectReference: {fileID: 0}
@@ -485,6 +489,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 229904417521533835, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: jumpHeight
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 489657394524466181, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
       propertyPath: m_LocalPosition.x
       value: -6.59
