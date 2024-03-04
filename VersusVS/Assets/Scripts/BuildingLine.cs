@@ -21,6 +21,10 @@ public class BuildingLine : MonoBehaviour
     [HideInInspector] public bool lerping = false;
     [HideInInspector] public bool rightToLeft = false;
 
+    [Header("TEMPORAL")]
+    [SerializeField] private Transform leftEnd;
+    [SerializeField] private Transform rightEnd;
+
     private void Start()
     {
         leftPos = leftChunk.transform.position;
@@ -33,6 +37,7 @@ public class BuildingLine : MonoBehaviour
         {
             playerBreakingThrough.GetComponent<Player>().enabled = false;
             playerBreakingThrough.GetComponent<Player>().knockback = true;
+            playerBreakingThrough.GetComponent<Player>().breakingBuild = true;
 
             elapsedTime += Time.deltaTime;
             percentageComplete = elapsedTime / interpolationDuration;
@@ -74,7 +79,39 @@ public class BuildingLine : MonoBehaviour
         else dir = new Vector2(1, 0);
 
         StartCoroutine(knockbakWaiter());
-        playerBreakingThrough.GetComponent<Rigidbody2D>().AddForce(dir * endForce);
+
+        //TEMPORAL PARA DEBUGAR
+
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+
+        if(playerBreakingThrough == players[0])
+        {
+            if (rightToLeft)
+            {
+                players[1].transform.position = leftEnd.position;
+                players[0].transform.position = leftEnd.position + new Vector3(-15,0,0);
+            }
+            else
+            {
+                players[1].transform.position = rightEnd.position;
+                players[0].transform.position = rightEnd.position + new Vector3(15, 0, 0);
+            }
+            
+        }
+        else
+        {
+            if (rightToLeft)
+            {
+                players[0].transform.position = leftEnd.position;
+                players[1].transform.position = leftEnd.position + new Vector3(-15, 0, 0);
+            }
+            else
+            {
+                players[0].transform.position = rightEnd.position;
+                players[1].transform.position = rightEnd.position + new Vector3(15, 0, 0);
+            }
+        }
+
 
     }
 
@@ -82,6 +119,7 @@ public class BuildingLine : MonoBehaviour
     {
         yield return new WaitForSecondsRealtime(0.5f);
         playerBreakingThrough.GetComponent<Player>().knockback = false;
+        playerBreakingThrough.GetComponent<Player>().breakingBuild = false;
     }
 
 }

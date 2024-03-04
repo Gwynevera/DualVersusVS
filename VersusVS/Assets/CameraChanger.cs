@@ -20,7 +20,7 @@ public class CameraChanger : MonoBehaviour
 
         if(collision.tag == "Player")
         {
-           
+           if(collision.GetComponent<Player>().knockback && collision.GetComponent<Player>().breakingBuild)
             Camera.GetComponent<CameraMovement>().moveCamera(cameraPoint.position);
             
         }

@@ -139,6 +139,7 @@ public class Player : MonoBehaviour
 
     [Header("Vulnerable state")]
     public bool knockback = false;
+    public bool breakingBuild = false;
 
     float knockbackTime = 0.45f;
     float smallKnockBackTime = 0.1f;

@@ -244,9 +244,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   timeTraveling: 1
   distanceOffset: 0.5
-  MaxDistance: 11
-  MinDistance: 9
-  yOffset: 3.5
+  minY: 0.6
+  MaxDistance: 15
+  MinDistance: 8
+  yOffset: 1.25
 --- !u!1001 &1333991623
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -255,14 +256,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 229904417521533835, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
-      propertyPath: jumpHeight
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 229904417521533835, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
-      propertyPath: playerKeysIndex
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 489657394524466181, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
       propertyPath: m_LocalPosition.x
       value: 5.51
@@ -324,6 +317,10 @@ PrefabInstance:
       propertyPath: jumpHeight
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 229904417521533835, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: playerKeysIndex
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 489657394524466181, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
       propertyPath: m_LocalPosition.x
       value: -6.59
@@ -363,6 +360,18 @@ PrefabInstance:
     - target: {fileID: 489657394524466181, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1427626535920109194, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1427626535920109194, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: m_Color.g
+      value: 0.78527033
+      objectReference: {fileID: 0}
+    - target: {fileID: 1427626535920109194, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
+      propertyPath: m_Color.r
+      value: 0.33725488
       objectReference: {fileID: 0}
     - target: {fileID: 4552636734402091311, guid: e34a7ee2c28e81f4bb3238ccfb346a65, type: 3}
       propertyPath: m_Name
@@ -442,6 +451,10 @@ PrefabInstance:
     - target: {fileID: 865990031271499094, guid: bf5f862f2b019f549923dfc275b78bef, type: 3}
       propertyPath: m_Name
       value: Tile
+      objectReference: {fileID: 0}
+    - target: {fileID: 5694272646722447737, guid: bf5f862f2b019f549923dfc275b78bef, type: 3}
+      propertyPath: endForce
+      value: 3000
       objectReference: {fileID: 0}
     - target: {fileID: 8200562874685480127, guid: bf5f862f2b019f549923dfc275b78bef, type: 3}
       propertyPath: m_LocalPosition.x
