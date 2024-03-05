@@ -63,12 +63,12 @@ public class Player : MonoBehaviour
     float freno = 0.7f;
     float airFreno = 0.55f;
 
-    float chargingDashSpeed = 0.65f; //0;
-    float chargingDashMaxSpeed = 6.5f; //0;
+    float chargingDashSpeed = 0; //0.65f
+    float chargingDashMaxSpeed = 0; //6.5f
 
     float gravity = 5;
     float low_gravity = 1;
-    float chargeDash_gravity = 4;
+    float chargeDash_gravity = 0;
 
     int turnCompensationPlus = 3;
 
@@ -101,7 +101,7 @@ public class Player : MonoBehaviour
     float dashTimer;
     float endDashSlowMult = 0.5f;
     public bool chargingDash;
-    float chargeDashTime = 2;
+    float chargeDashTime = 1;
     float chargeDashTimer;
     float chargeDashSlowMult = 0.5f;
 
