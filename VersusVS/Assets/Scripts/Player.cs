@@ -16,8 +16,9 @@ public class Player : MonoBehaviour
 
         public KeyCode jumpKey;
         public KeyCode dashkey;
-        public KeyCode attackKey;
+        public KeyCode grabKey;
         public KeyCode parryKey;
+        public KeyCode teleportKey;
 
         public MyPlayerKeys()
         {
@@ -42,6 +43,7 @@ public class Player : MonoBehaviour
     public bool keyDash;
     public bool keyAttack;
     public bool keyParry;
+    public bool keyTeleport;
 
     public bool prevJump;
     public bool prevDash;
@@ -51,6 +53,8 @@ public class Player : MonoBehaviour
     BoxCollider2D box;
     Animator anim;
     SpriteRenderer sprite;
+
+    public GameObject playerTwo;
 
     [Header("Direction")]
     public Vector2 dir = new Vector2();
@@ -67,8 +71,9 @@ public class Player : MonoBehaviour
     float chargingDashMaxSpeed = 0; //6.5f
 
     float gravity = 5;
-    float low_gravity = 1;
-    float chargeDash_gravity = 0;
+    float lowGravity = 1;
+    float chargeDashGravity = 0;
+    float zeroGravity = 0;
 
     int turnCompensationPlus = 3;
 
@@ -78,6 +83,13 @@ public class Player : MonoBehaviour
     public bool roof = false;
     [SerializeField]
     LayerMask groundCollisionLayer;
+
+    [Header("Teleport")]
+    public bool teleporting = false;
+    bool canTeleport;
+    float chargeTeleportTime = 0.25f;
+    float chargeTeleportTimer;
+    Vector3 teleportOffset = new Vector3(-2, 3);
 
     [Header("Jump")]
     public bool jump;
@@ -103,7 +115,7 @@ public class Player : MonoBehaviour
     public bool chargingDash;
     float chargeDashTime = 1;
     float chargeDashTimer;
-    float chargeDashSlowMult = 0.5f;
+    float chargeDashSlowMult = 0;
 
     [Header("Parry")]
     public GameObject parryObj;
@@ -245,6 +257,7 @@ public class Player : MonoBehaviour
         keyJump = Input.GetKey(myKeys.jumpKey);
         keyDash = Input.GetKey(myKeys.dashkey);
         keyParry = Input.GetKey(myKeys.parryKey);
+        keyTeleport = Input.GetKey(myKeys.teleportKey);
         #endregion Inputs
 
         // Left & Right
@@ -312,6 +325,7 @@ public class Player : MonoBehaviour
                 // Stop everything
                 dash = false;
                 jump = false;
+                doubleJump = false;
                 keepDashSpeed = false;
                 dir.x = 0;
             }
@@ -350,14 +364,14 @@ public class Player : MonoBehaviour
         if (keyJump)
         {
             // Just pressed jump, not in the ground yet
-            if (!prevJump && !grounded && !parry)
+            if (!prevJump && !grounded)
             {
                 jumpBuffer = true;
                 jBufferTimer = 0;
             }
 
             // Jump event
-            if ((!prevJump || jumpBuffer) && (grounded || canDoubleJump))
+            if ((!prevJump || jumpBuffer) && (grounded || canDoubleJump) && !parry && !chargingDash && !teleporting)
             {
                 jump = true;
                 topJumpPosition = transform.position.y + jumpHeight;
@@ -404,13 +418,14 @@ public class Player : MonoBehaviour
 
         #region Dash
         // Press Dash Key
-        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry && !knockback && !chargingDash)
+        if (!prevDash && keyDash && canDash && !dash && !parry && !afterParry && !knockback && !chargingDash && !teleporting)
         {
             canDash = false;
             dashTimer = 0;
             chargeDashTimer = 0;
 
             jump = false;
+            doubleJump = false;
 
             chargingDash = true;
             rb.velocity *= chargeDashSlowMult;
@@ -438,7 +453,7 @@ public class Player : MonoBehaviour
         }
         else
         {
-            sprite.color = Color.white;
+            //sprite.color = Color.white;
         }
 
         // Dashing
@@ -464,8 +479,38 @@ public class Player : MonoBehaviour
         dashObj.SetActive(dash);
         #endregion Dash
 
+        #region Teleport
+        if (keyTeleport && canTeleport
+            && !knockback && !parry && !afterParry)
+        {
+            if (!teleporting)
+            {
+                rb.velocity = Vector2.zero;
+                teleporting = true;
+                canTeleport = false;
+                chargeTeleportTimer = 0;
+
+                jump = false;
+                doubleJump = false;
+            }
+        }
+
+        if (teleporting)
+        {
+            sprite.color = Color.blue;
+
+            chargeTeleportTimer += Time.fixedDeltaTime;
+            if (chargeTeleportTimer >= chargeTeleportTime)
+            {
+                teleporting = false;
+
+                Teleport();
+            }
+        }
+        #endregion
+
         // Normal Movement
-        if (!dash && !knockback)
+        if (!dash && !knockback && !teleporting)
         {
             float compensate = 1;
             if (dir.x == 1 && rb.velocity.x < 0
@@ -509,11 +554,15 @@ public class Player : MonoBehaviour
         }
         else if (parried)
         {
-            rb.gravityScale = low_gravity;
+            rb.gravityScale = lowGravity;
         }
         else if (chargingDash)
         {
-            rb.gravityScale = chargeDash_gravity;
+            rb.gravityScale = chargeDashGravity;
+        }
+        else if (teleporting)
+        {
+            rb.gravityScale = zeroGravity;
         }
         else
         {
@@ -556,6 +605,11 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void Teleport()
+    {
+        transform.position = playerTwo.transform.position + new Vector3(teleportOffset.x*playerTwo.GetComponent<Player>().lastXdir, teleportOffset.y, 0);
+    }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
         Player other = collision.gameObject.GetComponentInParent<Player>();
@@ -585,6 +639,7 @@ public class Player : MonoBehaviour
                         other.canDash = true;
                         other.canDoubleJump = true;
                         other.doubleJump = false;
+                        other.canTeleport = true;
                     }
                 }
 
@@ -663,6 +718,7 @@ public class Player : MonoBehaviour
                 canDash = true;
             }
             canDoubleJump = true;
+            canTeleport = true;
 
             // Just touched the ground
             if (!prevGround)
