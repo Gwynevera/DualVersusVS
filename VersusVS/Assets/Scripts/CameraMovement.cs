@@ -35,53 +35,52 @@ public class CameraMovement : MonoBehaviour
     private void Update()
     {
        
-        distanceBetweenPlayers = Vector3.Distance(Players[0].transform.position, Players[1].transform.position);
-
-        float tmpDistance = distanceBetweenPlayers * distanceOffset;
-        if (tmpDistance < MaxDistance && tmpDistance > MinDistance) mainCam.orthographicSize = tmpDistance;
-        
-        if (tmpDistance < MinDistance)
-        {
-            mainCam.orthographicSize = MinDistance;
-        }
-        
-
-        Vector2 tmpPosition;
-        tmpPosition.x = Players[0].transform.position.x + (Players[1].transform.position.x - Players[0].transform.position.x) / 2;
-        tmpPosition.y = Players[0].transform.position.y + (Players[1].transform.position.y - Players[0].transform.position.y) / 2;
-
-        if (tmpPosition.y < minY)
-        {
-            tmpPosition.y = minY;
-        }
-
-        this.transform.position = new Vector3(tmpPosition.x, tmpPosition.y + yOffset, -10);
-
-        
-        //if (lerping)
+        //distanceBetweenPlayers = Vector3.Distance(Players[0].transform.position, Players[1].transform.position);
+        //
+        //float tmpDistance = distanceBetweenPlayers * distanceOffset;
+        //if (tmpDistance < MaxDistance && tmpDistance > MinDistance) mainCam.orthographicSize = tmpDistance;
+        //
+        //if (tmpDistance < MinDistance)
         //{
-        //    timer += Time.deltaTime;
-        //    float percentage = timer / timeTraveling;
+        //    mainCam.orthographicSize = MinDistance;
+        //}
+        //
+        //
+        //Vector2 tmpPosition;
+        //tmpPosition.x = Players[0].transform.position.x + (Players[1].transform.position.x - Players[0].transform.position.x) / 2;
+        //tmpPosition.y = Players[0].transform.position.y + (Players[1].transform.position.y - Players[0].transform.position.y) / 2;
+        //
+        //if (tmpPosition.y < minY)
+        //{
+        //    tmpPosition.y = minY;
+        //}
+        //
+        //this.transform.position = new Vector3(tmpPosition.x, tmpPosition.y + yOffset, -10);
 
-        //    transform.position = Vector3.Lerp(startPosition, endPosition, percentage);
+        
+        if (lerping)
+        {
+            timer += Time.deltaTime;
+            float percentage = timer / timeTraveling;
 
-        //    if (percentage >= 1)
-        //    {
-        //        lerping = false;
-        //        timer = 0;
-        //        follow = true;
-        //    }
-        //}        
+            transform.position = Vector3.Lerp(startPosition, endPosition, percentage);
+
+            if (percentage >= 1)
+            {
+                lerping = false;
+                timer = 0;
+            }
+        }        
     }
 
 
     public void moveCamera(Vector3 endPoint)
     {
-        //startPosition = this.transform.position;
-        //endPosition = endPoint;
-        //lerping = true;
-        //timer = 0.0f;
-        //follow = false;
+        startPosition = this.transform.position;
+        endPosition = endPoint;
+        lerping = true;
+        timer = 0.0f;
+        
     }
 
 

@@ -113,7 +113,7 @@ public class Player : MonoBehaviour
     float dashTimer;
     float endDashSlowMult = 0.5f;
     public bool chargingDash;
-    float chargeDashTime = 1;
+    float chargeDashTime = 0.5f;
     float chargeDashTimer;
     float chargeDashSlowMult = 0;
 
@@ -126,7 +126,6 @@ public class Player : MonoBehaviour
     float aParryTime = 0.5f;
     float aParryTimer;
     public bool parried;
-    float parrySlowMult = 0.75f;
 
     [Header("Afterimage")]
     public GameObject afterImage;
@@ -160,7 +159,7 @@ public class Player : MonoBehaviour
     float upForceParryKnockbackTime = 0.4f;
 
     float superPushForce = 30;
-    float dashPushForce = 20;
+    float dashPushForce = 40;
     float clashPushForce = 10;
     float parryPushForce = 7.5f;
 
@@ -323,6 +322,7 @@ public class Player : MonoBehaviour
                 parryTimer = 0;
 
                 // Stop everything
+                rb.velocity = Vector2.zero;
                 dash = false;
                 jump = false;
                 doubleJump = false;
@@ -335,7 +335,6 @@ public class Player : MonoBehaviour
         if (parry)
         {
             sprite.color = (Color.red + Color.yellow) / 2; ///
-            rb.velocity *= parrySlowMult;
 
             parryTimer += Time.fixedDeltaTime;
             if (parryTimer > parryTime)
@@ -510,7 +509,7 @@ public class Player : MonoBehaviour
         #endregion
 
         // Normal Movement
-        if (!dash && !knockback && !teleporting)
+        if (!dash && !knockback && !teleporting && !parry && !afterParry)
         {
             float compensate = 1;
             if (dir.x == 1 && rb.velocity.x < 0
@@ -552,7 +551,7 @@ public class Player : MonoBehaviour
         {
             rb.gravityScale = 0;
         }
-        else if (parried)
+        else if (parried || afterParry)
         {
             rb.gravityScale = lowGravity;
         }
@@ -560,7 +559,7 @@ public class Player : MonoBehaviour
         {
             rb.gravityScale = chargeDashGravity;
         }
-        else if (teleporting)
+        else if (teleporting || parry)
         {
             rb.gravityScale = zeroGravity;
         }
@@ -650,19 +649,15 @@ public class Player : MonoBehaviour
 
                     clash = (dash && other.dash) || other.clash;
 
+                    rb.velocity = Vector2.zero;
                     dash = false;
                     jump = false;
                     doubleJump = false;
+                    teleporting = false;
                     knockback = true;
-                    rb.velocity = Vector2.zero;
 
                     Vector2 dashPushDir = other.dashDirection;
-                    // Downwards vertical dash on grounded opponent
-                    if (grounded && dashPushDir.x != 0)
-                    {
-                        dashPushDir.y = 1;
-                    }
-
+                   
                     if (clash)
                     {
                         Debug.Log(this.name + " CLASH ");
@@ -696,6 +691,7 @@ public class Player : MonoBehaviour
                         other.rb.velocity = Vector2.zero;
                         other.dash = false;
                         other.canDash = true;
+                        other.canTeleport = true;
                     }
                 }
             }
