@@ -89,7 +89,7 @@ public class Player : MonoBehaviour
     bool canTeleport;
     float chargeTeleportTime = 0.25f;
     float chargeTeleportTimer;
-    Vector3 teleportOffset = new Vector3(-2, 3);
+    float teleportOffset = 2;
 
     [Header("Jump")]
     public bool jump;
@@ -404,6 +404,12 @@ public class Player : MonoBehaviour
         // Jumping
         if (jump || doubleJump)
         {
+            if (roof)
+            {
+                jump = doubleJump = false;
+                rb.AddForce(Vector2.down * topSlowJumpForce, ForceMode2D.Impulse);
+            }
+
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
             
             // Reached Top of the Jump
@@ -606,7 +612,18 @@ public class Player : MonoBehaviour
 
     private void Teleport()
     {
-        transform.position = playerTwo.transform.position + new Vector3(teleportOffset.x*playerTwo.GetComponent<Player>().lastXdir, teleportOffset.y, 0);
+        Vector3 teleportLocation = Vector2.zero;
+        if (dir != Vector2.zero)
+        {
+            // Teleport to Input Location
+            teleportLocation = teleportOffset * (Vector3)dir;
+        }
+        else
+        {
+            // Teleport behind the Player if no Input
+            teleportLocation = teleportOffset * new Vector3(playerTwo.GetComponent<Player>().lastXdir, 1, 0);
+        }
+        transform.position = playerTwo.transform.position + teleportLocation;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -714,7 +731,11 @@ public class Player : MonoBehaviour
                 canDash = true;
             }
             canDoubleJump = true;
-            canTeleport = true;
+
+            if (!keyTeleport)
+            {
+                canTeleport = true;
+            }
 
             // Just touched the ground
             if (!prevGround)
